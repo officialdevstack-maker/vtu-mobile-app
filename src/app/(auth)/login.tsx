@@ -1,11 +1,14 @@
 // src/app/login.tsx
 
 import * as AuthSession from 'expo-auth-session';
-import { Redirect, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useSession } from '@/auth/session';
+import { Button } from '@/components/button';
+import { MaxContentWidth } from '@/constants/theme';
+import { radius, useColors } from '@/theme';
 
 const issuer =
   process.env.EXPO_PUBLIC_SPURS_ISSUER ??
@@ -13,10 +16,10 @@ const issuer =
 const clientId = process.env.EXPO_PUBLIC_SPURS_CLIENT_ID ?? '';
 
 export default function LoginScreen() {
-  const router = useRouter();
-  const { isSignedIn, isLoading, signIn } = useSession();
+  const colors = useColors();
+  const { isLoading, signIn } = useSession();
   const discovery = AuthSession.useAutoDiscovery(issuer);
-  const redirectUri = AuthSession.makeRedirectUri({ scheme: 'vtuapp', path: 'login' });
+  const redirectUri = AuthSession.makeRedirectUri({ scheme: 'vtuapp', path: 'redirect' });
   const [request, response, promptAsync] = AuthSession.useAuthRequest(
     {
       clientId,
@@ -47,40 +50,76 @@ export default function LoginScreen() {
         );
         if (!token.accessToken) throw new Error('Sign-in did not return an access token.');
         await signIn(token.accessToken, token.refreshToken);
-        router.replace('/');
       } catch (exchangeError) {
         setError(exchangeError instanceof Error ? exchangeError.message : 'Sign-in failed.');
       }
     })();
-  }, [response, request, discovery, redirectUri, router, signIn]);
+  }, [response, request, discovery, redirectUri, signIn]);
 
   if (isLoading) return <View style={styles.center}><ActivityIndicator /></View>;
-  if (isSignedIn) return <Redirect href="/" />;
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Spur VTU</Text>
-      <Text style={styles.subtitle}>Sign in to manage and purchase VTU services.</Text>
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-      <Pressable
-        accessibilityLabel="Sign in with Spurs"
-        disabled={!request || !clientId}
-        onPress={() => void promptAsync()}
-        style={({ pressed }) => [styles.button, pressed && styles.pressed]}>
-        <Text style={styles.buttonText}>Sign in with Spurs</Text>
-      </Pressable>
-      {!clientId ? <Text style={styles.error}>Mobile sign-in is not configured.</Text> : null}
-    </View>
+    <SafeAreaView style={[styles.screen, { backgroundColor: colors.background }]}>
+      <View style={styles.content}>
+        <View style={styles.hero}>
+          <View style={[styles.mark, { backgroundColor: colors.primary }]}>
+            <Text style={[styles.markText, { color: colors.onPrimary }]}>S</Text>
+          </View>
+          <Text accessibilityRole="header" style={[styles.title, { color: colors.text }]}>Spur VTU</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+            Airtime, data, cable TV and electricity from one wallet.
+          </Text>
+        </View>
+        <View style={styles.actions}>
+          {error ? (
+            <Text accessibilityRole="alert" style={[styles.error, { color: colors.danger, borderColor: colors.danger }]}>
+              {error}
+            </Text>
+          ) : null}
+          <Button
+            label="Continue with Spurs"
+            onPress={() => void promptAsync()}
+            disabled={!request || !clientId}
+            loading={!request}
+            accessibilityLabel="Sign in with Spurs"
+          />
+          {!clientId ? (
+            <Text style={[styles.error, { color: colors.danger }]}>Mobile sign-in is not configured.</Text>
+          ) : null}
+        </View>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, backgroundColor: '#EEF3F4' },
-  title: { color: '#12343B', fontSize: 32, fontWeight: '700' },
-  subtitle: { color: '#60757A', marginTop: 8, marginBottom: 24, textAlign: 'center' },
-  error: { color: '#C8432B', marginBottom: 16, textAlign: 'center' },
-  button: { minHeight: 52, minWidth: 220, alignItems: 'center', justifyContent: 'center', borderRadius: 12, backgroundColor: '#F2B632', paddingHorizontal: 24 },
-  buttonText: { color: '#12343B', fontSize: 16, fontWeight: '700' },
-  pressed: { opacity: 0.85 },
+  screen: { flex: 1, alignItems: 'center' },
+  content: {
+    flex: 1,
+    width: '100%',
+    maxWidth: MaxContentWidth,
+    paddingHorizontal: 24,
+    paddingBottom: 24,
+    justifyContent: 'space-between',
+  },
+  hero: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
+  mark: {
+    width: 72,
+    height: 72,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  markText: { fontSize: 36, fontWeight: '700' },
+  title: { fontSize: 34, fontWeight: '700' },
+  subtitle: { fontSize: 16, lineHeight: 24, textAlign: 'center', maxWidth: 320 },
+  actions: { gap: 12 },
+  error: {
+    borderWidth: 1,
+    borderRadius: radius,
+    padding: 12,
+    fontSize: 14,
+    fontWeight: '600',
+  },
 });
