@@ -19,7 +19,9 @@ export default function LoginScreen() {
   const colors = useColors();
   const { isLoading, signIn } = useSession();
   const discovery = AuthSession.useAutoDiscovery(issuer);
-  const redirectUri = AuthSession.makeRedirectUri({ scheme: 'vtuapp', path: 'redirect' });
+  const redirectUri =
+    process.env.EXPO_PUBLIC_SPURS_REDIRECT_URI ??
+    AuthSession.makeRedirectUri({ scheme: 'vtuapp', path: 'redirect' });
   const [request, response, promptAsync] = AuthSession.useAuthRequest(
     {
       clientId,

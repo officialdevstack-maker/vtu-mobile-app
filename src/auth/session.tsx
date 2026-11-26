@@ -4,11 +4,13 @@ import * as AuthSession from 'expo-auth-session';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { configureApiClient } from '@/api/client';
+import { isMockMode } from '@/api/mock-mode';
 import { clearTokens, loadTokens, saveTokens } from './storage';
 
 type SessionContextValue = {
   isLoading: boolean;
   isSignedIn: boolean;
+  isMockMode: boolean;
   accessToken: string | null;
   signIn: (accessToken: string, refreshToken?: string | null) => Promise<void>;
   signOut: () => Promise<void>;
@@ -17,7 +19,7 @@ type SessionContextValue = {
 const SessionContext = createContext<SessionContextValue | null>(null);
 
 export function SessionProvider({ children }: { children: ReactNode }) {
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!isMockMode);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState<string | null>(null);
 
@@ -34,6 +36,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (isMockMode) return;
+
     let mounted = true;
     void loadTokens().then((session) => {
       if (!mounted) return;
@@ -79,7 +83,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const value = useMemo<SessionContextValue>(
     () => ({
       isLoading,
-      isSignedIn: accessToken !== null,
+      isSignedIn: isMockMode || accessToken !== null,
+      isMockMode,
       accessToken,
       signIn,
       signOut,

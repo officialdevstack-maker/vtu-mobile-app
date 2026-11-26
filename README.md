@@ -25,6 +25,12 @@ In the output, you'll find options to open the app in a
 
 You can start developing by editing the files inside the **src/app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
 
+## Local demo mode
+
+Development builds use sample data and skip Spur sign-in by default. The demo mode is restricted
+to development and blocks live API requests and purchases. Set `EXPO_PUBLIC_USE_MOCK_DATA=false`
+in your local environment to test the real OAuth flow instead, then restart Expo.
+
 ## Get a fresh project
 
 When you're ready, run:

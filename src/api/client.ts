@@ -1,6 +1,7 @@
 // src/api/client.ts
 
 import { ApiError } from './errors';
+import { isMockMode } from './mock-mode';
 import type { ApiResponse } from './types';
 
 const BASE_URL = `${process.env.EXPO_PUBLIC_API_URL ?? ''}/api/v1`;
@@ -77,6 +78,10 @@ async function request<T>(
   path: string,
   options: { query?: Record<string, string | number | undefined>; body?: unknown } = {},
 ): Promise<T> {
+  if (isMockMode) {
+    throw new ApiError(0, 'mock_mode', 'Live API requests are disabled while demo data is active.');
+  }
+
   const url = `${BASE_URL}${path}${buildQuery(options.query)}`;
   const token = (await handlers?.getAccessToken()) ?? null;
   let response = await send(method, url, token, options.body);

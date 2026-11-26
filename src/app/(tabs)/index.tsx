@@ -13,7 +13,7 @@ import type { TransactionItem } from '@/api/types';
 
 export default function HomeScreen() {
   const colors = useColors();
-  const { isLoading: sessionLoading, isSignedIn, signOut } = useSession();
+  const { isLoading: sessionLoading, isSignedIn, isMockMode, signOut } = useSession();
   const balance = useQuery({
     queryKey: ['balance'],
     queryFn: getBalance,
@@ -54,21 +54,31 @@ export default function HomeScreen() {
             }}
           />
         }>
+          {isMockMode ? (
+            <View
+              accessible
+              accessibilityLabel="Demo mode. Sample data only; purchases are disabled."
+              style={styles.demoBanner}>
+              <Text style={styles.demoBannerText}>DEMO MODE · Sample data only. Purchases disabled.</Text>
+            </View>
+          ) : null}
         <View style={styles.header}>
           <View>
             <Text style={[styles.greeting, { color: colors.textSecondary }]}>Good day</Text>
             <Text style={[styles.brand, { color: colors.text }]}>Spur VTU</Text>
           </View>
-          <Pressable
-            accessibilityLabel="Sign out"
-            onPress={() => void signOut()}
-            style={({ pressed }) => [styles.signOut, pressed && styles.pressed]}>
-            <Text style={[styles.signOutText, { color: colors.text }]}>Sign out</Text>
-          </Pressable>
+          {isMockMode ? null : (
+            <Pressable
+              accessibilityLabel="Sign out"
+              onPress={() => void signOut()}
+              style={({ pressed }) => [styles.signOut, pressed && styles.pressed]}>
+              <Text style={[styles.signOutText, { color: colors.text }]}>Sign out</Text>
+            </Pressable>
+          )}
         </View>
 
         <View style={styles.wallet}>
-          <Text style={styles.walletLabel}>Wallet balance</Text>
+          <Text style={styles.walletLabel}>{isMockMode ? 'Demo wallet balance' : 'Wallet balance'}</Text>
           {balance.isLoading ? (
             <ActivityIndicator color="#F2B632" />
           ) : balance.isError ? (
@@ -196,6 +206,14 @@ const styles = StyleSheet.create({
   brand: { color: '#12343B', fontSize: 24, fontWeight: '700', marginTop: 2 },
   signOut: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 12 },
   signOutText: { color: '#12343B', fontWeight: '700' },
+  demoBanner: {
+    width: '100%',
+    borderRadius: 10,
+    backgroundColor: '#F2B632',
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+  },
+  demoBannerText: { color: '#12343B', fontSize: 13, fontWeight: '700', textAlign: 'center' },
   wallet: { width: '100%', minHeight: 140, justifyContent: 'center', borderRadius: 16, backgroundColor: '#12343B', padding: 24 },
   walletLabel: { color: '#BCD0D4', fontSize: 14, marginBottom: 8 },
   balance: { color: '#F7F8F3', fontSize: 32, fontWeight: '700', fontVariant: ['tabular-nums'] },
