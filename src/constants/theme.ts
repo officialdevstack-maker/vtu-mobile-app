@@ -3,24 +3,34 @@
  * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://unistyl.es/), etc.
  */
 
-import '@/global.css';
-
 import { Platform } from 'react-native';
 
 export const Colors = {
   light: {
-    text: '#000000',
-    background: '#ffffff',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
+    text: '#12343B',
+    background: '#EEF3F4',
+    backgroundElement: '#F7F8F3',
+    backgroundSelected: '#E2EAEB',
+    textSecondary: '#60757A',
+    petrol: '#12343B',
+    mist: '#EEF3F4',
+    paper: '#F7F8F3',
+    marigold: '#F2B632',
+    green: '#1E8E4F',
+    coral: '#C8432B',
   },
   dark: {
-    text: '#ffffff',
-    background: '#000000',
-    backgroundElement: '#212225',
-    backgroundSelected: '#2E3135',
-    textSecondary: '#B0B4BA',
+    text: '#F7F8F3',
+    background: '#10282E',
+    backgroundElement: '#12343B',
+    backgroundSelected: '#1B454E',
+    textSecondary: '#BCD0D4',
+    petrol: '#12343B',
+    mist: '#EEF3F4',
+    paper: '#F7F8F3',
+    marigold: '#F2B632',
+    green: '#4DB56F',
+    coral: '#E66B55',
   },
 } as const;
 
