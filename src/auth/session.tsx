@@ -2,7 +2,7 @@
 
 import * as AuthSession from 'expo-auth-session';
 import * as SecureStore from 'expo-secure-store';
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { configureApiClient } from '@/api/client';
 
@@ -44,17 +44,17 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState<string | null>(null);
 
-  const signIn = async (nextAccessToken: string, nextRefreshToken?: string | null) => {
+  const signIn = useCallback(async (nextAccessToken: string, nextRefreshToken?: string | null) => {
     await storeSession(nextAccessToken, nextRefreshToken);
     setAccessToken(nextAccessToken);
     setRefreshToken(nextRefreshToken ?? null);
-  };
+  }, []);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     await clearSession();
     setAccessToken(null);
     setRefreshToken(null);
-  };
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -94,7 +94,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         void signOut();
       },
     });
-  }, [accessToken, refreshToken]);
+  }, [accessToken, refreshToken, signOut]);
 
   const value = useMemo<SessionContextValue>(
     () => ({
@@ -104,7 +104,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       signIn,
       signOut,
     }),
-    [isLoading, accessToken],
+    [isLoading, accessToken, signIn, signOut],
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

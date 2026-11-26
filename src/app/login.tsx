@@ -7,13 +7,15 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-nati
 
 import { useSession } from '@/auth/session';
 
-const issuer = process.env.EXPO_PUBLIC_SPURS_ISSUER ?? '';
+const issuer =
+  process.env.EXPO_PUBLIC_SPURS_ISSUER ??
+  'https://node-accounts-backend.onrender.com/api/oidc';
 const clientId = process.env.EXPO_PUBLIC_SPURS_CLIENT_ID ?? '';
 
 export default function LoginScreen() {
   const router = useRouter();
   const { isSignedIn, isLoading, signIn } = useSession();
-  const discovery = AuthSession.useAutoDiscovery(issuer || null);
+  const discovery = AuthSession.useAutoDiscovery(issuer);
   const redirectUri = AuthSession.makeRedirectUri({ scheme: 'vtuapp', path: 'login' });
   const [request, response, promptAsync] = AuthSession.useAuthRequest(
     {
@@ -50,7 +52,7 @@ export default function LoginScreen() {
         setError(exchangeError instanceof Error ? exchangeError.message : 'Sign-in failed.');
       }
     })();
-  }, [response, request, discovery, redirectUri, router]);
+  }, [response, request, discovery, redirectUri, router, signIn]);
 
   if (isLoading) return <View style={styles.center}><ActivityIndicator /></View>;
   if (isSignedIn) return <Redirect href="/" />;
