@@ -20,7 +20,6 @@ import { requestAccountDeletion } from '@/api/account';
 import { getMe } from '@/api/endpoints';
 import { errorMessage } from '@/api/errors';
 import { useSession } from '@/auth/session';
-import { Button } from '@/components/button';
 import { MenuRow } from '@/components/menu-row';
 import { ErrorState, LoadingState } from '@/components/states';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
