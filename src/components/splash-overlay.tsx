@@ -1,7 +1,7 @@
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeIn, FadeInDown, FadeOut } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown, FadeOut, useReducedMotion } from 'react-native-reanimated';
 
 import { useSession } from '@/auth/session';
 import { brand } from '@/theme';
@@ -11,6 +11,7 @@ const FADE_OUT_MS = 350;
 
 export function SplashOverlay() {
   const { isLoading } = useSession();
+  const reduceMotion = useReducedMotion();
   const [minElapsed, setMinElapsed] = useState(false);
 
   useEffect(() => {
@@ -24,7 +25,7 @@ export function SplashOverlay() {
     <Animated.View
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
-      exiting={FadeOut.duration(FADE_OUT_MS)}
+      exiting={reduceMotion ? undefined : FadeOut.duration(FADE_OUT_MS)}
       onLayout={() => {
         void SplashScreen.hideAsync().catch((error: unknown) => {
           console.error('Unable to hide the native splash screen.', error);
@@ -35,10 +36,14 @@ export function SplashOverlay() {
         <View style={styles.mark}>
           <Text style={styles.markText}>S</Text>
         </View>
-        <Animated.Text entering={FadeInDown.delay(100).duration(450)} style={styles.name}>
+        <Animated.Text
+          entering={reduceMotion ? undefined : FadeInDown.delay(100).duration(450)}
+          style={styles.name}>
           Spur VTU
         </Animated.Text>
-        <Animated.Text entering={FadeIn.delay(350).duration(450)} style={styles.tagline}>
+        <Animated.Text
+          entering={reduceMotion ? undefined : FadeIn.delay(350).duration(450)}
+          style={styles.tagline}>
           Airtime, data, cable TV and electricity
         </Animated.Text>
       </View>

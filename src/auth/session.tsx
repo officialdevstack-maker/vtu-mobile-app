@@ -4,6 +4,7 @@ import * as AuthSession from 'expo-auth-session';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { configureApiClient } from '@/api/client';
+import { queryClient } from '@/api/query-client';
 import { clearTokens, loadTokens, saveTokens } from './storage';
 
 type SessionContextValue = {
@@ -29,6 +30,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     await clearTokens();
+    queryClient.clear();
     setAccessToken(null);
     setRefreshToken(null);
   }, []);
@@ -57,10 +59,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         if (!discovery.tokenEndpoint) return null;
         const clientId = process.env.EXPO_PUBLIC_SPURS_CLIENT_ID;
         if (!clientId) return null;
-        const response = await AuthSession.refreshAsync(
-          { clientId, refreshToken },
-          discovery,
-        );
+        let response: AuthSession.TokenResponse;
+        try {
+          response = await AuthSession.refreshAsync({ clientId, refreshToken }, discovery);
+        } catch (error) {
+          if (error instanceof AuthSession.TokenError) return null;
+          throw error;
+        }
         if (!response.accessToken) return null;
         await saveTokens({
           accessToken: response.accessToken,

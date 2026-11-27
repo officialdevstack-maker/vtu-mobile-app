@@ -76,6 +76,12 @@ export type DataNetwork = {
   plans: DataPlan[];
 };
 export type DataCatalog = { networks: DataNetwork[] };
+// Confirm the raw type shape against a live response.
+export type RawDataCatalog = {
+  networks: (Omit<DataNetwork, 'types'> & {
+    types: (string | DataNetwork['types'][number])[];
+  })[];
+};
 
 export type CablePlan = { id: string; name: string; validity: string; price: number };
 export type CableOperator = { id: string; name: string; plans: CablePlan[] };

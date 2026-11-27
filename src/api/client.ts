@@ -14,9 +14,26 @@ export type AuthHandlers = {
 };
 
 let handlers: AuthHandlers | null = null;
+let refreshInFlight: Promise<string | null> | null = null;
 
 export function configureApiClient(next: AuthHandlers): void {
   handlers = next;
+}
+
+function refreshOnce(): Promise<string | null> {
+  if (!refreshInFlight) {
+    const refresh = handlers?.refresh;
+    if (!refresh) return Promise.resolve(null);
+    refreshInFlight = Promise.resolve()
+      .then(() => refresh())
+      .catch(() => {
+        throw new ApiError(0, 'network_error', 'Check your internet connection and try again.');
+      })
+      .finally(() => {
+        refreshInFlight = null;
+      });
+  }
+  return refreshInFlight;
 }
 
 type Method = 'GET' | 'POST' | 'DELETE';
@@ -91,7 +108,7 @@ async function request<T>(
   let response = await send(method, url, token, options.body);
 
   if (response.status === 401 && handlers) {
-    const fresh = await handlers.refresh();
+    const fresh = await refreshOnce();
     if (!fresh) {
       handlers.onSignedOut();
       return parse<T>(response);

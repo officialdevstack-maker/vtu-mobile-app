@@ -1,6 +1,7 @@
-// src/app/login.tsx
+// src/app/(auth)/login.tsx
 
 import * as AuthSession from 'expo-auth-session';
+import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,6 +10,8 @@ import { useSession } from '@/auth/session';
 import { Button } from '@/components/button';
 import { MaxContentWidth } from '@/constants/theme';
 import { radius, useColors } from '@/theme';
+
+WebBrowser.maybeCompleteAuthSession();
 
 const issuer =
   process.env.EXPO_PUBLIC_SPURS_ISSUER ??

@@ -19,6 +19,7 @@ import type {
   MeterVerification,
   NotificationList,
   PurchaseResult,
+  RawDataCatalog,
   SmartcardVerification,
   SupportTicketCreated,
   SupportTicketInput,
@@ -48,7 +49,18 @@ export const createTemporaryAccount = (amount: number) =>
 export const createSupportTicket = (body: SupportTicketInput) =>
   api.post<SupportTicketCreated>('/support', body);
 export const getAirtimeCatalog = () => api.get<AirtimeCatalog>('/catalog/airtime');
-export const getDataCatalog = () => api.get<DataCatalog>('/catalog/data');
+export const getDataCatalog = async (): Promise<DataCatalog> => {
+  const catalog = await api.get<RawDataCatalog>('/catalog/data');
+  return {
+    ...catalog,
+    networks: catalog.networks.map((network) => ({
+      ...network,
+      types: network.types.map((type) =>
+        typeof type === 'string' ? { id: type.toLowerCase(), label: type } : type,
+      ),
+    })),
+  };
+};
 export const getCableCatalog = () => api.get<CableCatalog>('/catalog/cable');
 export const getElectricityCatalog = () => api.get<ElectricityCatalog>('/catalog/electricity');
 export const verifySmartcard = (operatorId: string, smartcard: string) =>
