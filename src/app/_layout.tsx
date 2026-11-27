@@ -17,6 +17,14 @@ import { useColors } from '@/theme';
 
 const sentryDsn = process.env.EXPO_PUBLIC_SENTRY_DSN;
 
+function redactSensitiveText(value: string): string {
+  return value
+    .replace(/\bBearer\s+\S+/gi, 'Bearer [redacted]')
+    .replace(/\+?234[\s-]?\d{10}\b|\b0\d{10}\b/g, '[phone]')
+    .replace(/\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/g, '[token]')
+    .replace(/\bsntrys_[A-Za-z0-9_+/.=-]+/gi, '[token]');
+}
+
 if (sentryDsn) {
   Sentry.init({
     dsn: sentryDsn,
@@ -28,11 +36,13 @@ if (sentryDsn) {
       event.request = undefined;
       event.breadcrumbs = undefined;
       event.extra = undefined;
-      event.message = undefined;
-      event.logentry = undefined;
       event.transaction = undefined;
+      if (event.message) event.message = redactSensitiveText(event.message);
+      if (event.logentry?.message) {
+        event.logentry.message = redactSensitiveText(event.logentry.message);
+      }
       for (const exception of event.exception?.values ?? []) {
-        exception.value = undefined;
+        if (exception.value) exception.value = redactSensitiveText(exception.value);
       }
       return event;
     },
