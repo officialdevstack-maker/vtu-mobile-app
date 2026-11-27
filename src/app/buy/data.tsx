@@ -10,6 +10,7 @@ import type { DataPurchase } from '@/api/types';
 import { Button } from '@/components/button';
 import { FilterChip } from '@/components/filter-chip';
 import { PlanTile } from '@/components/plan-tile';
+import { PromoField, type AppliedPromo } from '@/components/promo-field';
 import { PurchaseConfirm } from '@/components/purchase-confirm';
 import { PurchaseResultCard } from '@/components/purchase-result';
 import { SummaryRow } from '@/components/summary-row';
@@ -31,6 +32,7 @@ export default function BuyDataScreen() {
   const [planId, setPlanId] = useState<string | null>(null);
   const [showErrors, setShowErrors] = useState(false);
   const [cashbackChoice, setCashbackChoice] = useState<boolean | null>(null);
+  const [promo, setPromo] = useState<AppliedPromo | null>(null);
 
   const catalog = useQuery({ queryKey: ['catalog', 'data'], queryFn: getDataCatalog });
   const slow = useSlowLoading(catalog.isLoading);
@@ -46,6 +48,7 @@ export default function BuyDataScreen() {
     return [...list].sort((a, b) => a.price - b.price);
   }, [network, type]);
   const plan = plans.find((item) => item.id === planId);
+  const activePromo = promo && plan && promo.forPrice === plan.price ? promo : null;
 
   const phoneIsValid = isValidPhone(phone);
   const cashbackBalance = me.data?.cashbackBalance ?? 0;
@@ -70,12 +73,14 @@ export default function BuyDataScreen() {
       reference,
       pin,
       useCashback,
+      promoCode: activePromo?.code ?? null,
     }));
   }
 
   function buyAgain() {
     setPhone('');
     setPlanId(null);
+    setPromo(null);
     setShowErrors(false);
     flow.finish();
   }
@@ -109,7 +114,7 @@ export default function BuyDataScreen() {
         flow={flow}
         recipientLabel="To"
         recipient={groupPhone(phone)}
-        amount={plan.price}
+        amount={activePromo?.finalPrice ?? plan.price}
         cashback={
           cashbackAvailable
             ? { available: cashbackBalance, value: useCashback, onChange: setCashbackChoice }
@@ -125,6 +130,12 @@ export default function BuyDataScreen() {
         onEdit={flow.back}>
         <SummaryRow label="Network" value={network.name} />
         <SummaryRow label="Plan" value={`${plan.size} · ${plan.validity}`} />
+        {activePromo ? (
+          <SummaryRow
+            label={`Promo ${activePromo.code}`}
+            value={`-${formatNaira(activePromo.discount)}`}
+          />
+        ) : null}
       </PurchaseConfirm>
     );
   } else {
@@ -167,6 +178,7 @@ export default function BuyDataScreen() {
                 label={item.name}
                 selected={item.id === network.id}
                 onPress={() => {
+                  setPromo(null);
                   setNetworkId(item.id);
                   setTypeId(null);
                   setPlanId(null);
@@ -182,6 +194,7 @@ export default function BuyDataScreen() {
                   label={item.label}
                   selected={item.id === type?.id}
                   onPress={() => {
+                    setPromo(null);
                     setTypeId(item.id);
                     setPlanId(null);
                   }}
@@ -213,7 +226,10 @@ export default function BuyDataScreen() {
                   validity={item.validity}
                   price={item.price}
                   selected={item.id === plan?.id}
-                  onPress={() => setPlanId(item.id)}
+                  onPress={() => {
+                    setPromo(null);
+                    setPlanId(item.id);
+                  }}
                 />
               ))}
             </View>
@@ -225,6 +241,12 @@ export default function BuyDataScreen() {
           ) : null}
         </View>
 
+        <PromoField
+          service="data"
+          price={plan?.price ?? null}
+          value={activePromo}
+          onChange={setPromo}
+        />
         <Button label="Continue" onPress={goToConfirm} />
       </>
     );

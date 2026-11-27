@@ -18,6 +18,7 @@ import type { ElectricityPurchase, MeterType } from '@/api/types';
 import { AmountTile } from '@/components/amount-tile';
 import { Button } from '@/components/button';
 import { FilterChip } from '@/components/filter-chip';
+import { PromoField, type AppliedPromo } from '@/components/promo-field';
 import { PurchaseConfirm } from '@/components/purchase-confirm';
 import { PurchaseResultCard } from '@/components/purchase-result';
 import { SummaryRow } from '@/components/summary-row';
@@ -50,6 +51,7 @@ export default function BuyElectricityScreen() {
   const [providerOpen, setProviderOpen] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
   const [cashbackChoice, setCashbackChoice] = useState<boolean | null>(null);
+  const [promo, setPromo] = useState<AppliedPromo | null>(null);
   const [verified, setVerified] = useState<Verification | null>(null);
   const [verifyError, setVerifyError] = useState<string | null>(null);
 
@@ -71,6 +73,7 @@ export default function BuyElectricityScreen() {
     Number.isInteger(amount) &&
     amount >= Math.max(1, minAmount) &&
     amount <= maxAmount;
+  const activePromo = promo && amountIsValid && promo.forPrice === amount ? promo : null;
 
   const phoneIsValid = isValidPhone(phone);
   const meterIsValid = /^\d{10,13}$/.test(meter);
@@ -121,6 +124,7 @@ export default function BuyElectricityScreen() {
       reference,
       pin,
       useCashback,
+      promoCode: activePromo?.code ?? null,
     }));
   }
 
@@ -128,6 +132,7 @@ export default function BuyElectricityScreen() {
     setPhone('');
     setMeter('');
     setAmountText('');
+    setPromo(null);
     setShowErrors(false);
     setVerified(null);
     setVerifyError(null);
@@ -186,6 +191,13 @@ export default function BuyElectricityScreen() {
         {verification ? <SummaryRow label="Address" value={verification.address} /> : null}
         <SummaryRow label="Phone number" value={groupPhone(phone)} />
         <SummaryRow label="Amount" value={formatNaira(amount)} />
+        {activePromo ? (
+          <SummaryRow
+            label={`Promo ${activePromo.code}`}
+            value={`-${formatNaira(activePromo.discount)}`}
+            note={`You pay about ${formatNaira(activePromo.finalPrice)}`}
+          />
+        ) : null}
       </PurchaseConfirm>
     );
   } else {
@@ -243,6 +255,7 @@ export default function BuyElectricityScreen() {
                     accessibilityState={{ checked: selected, disabled: verify.isPending }}
                     disabled={verify.isPending}
                     onPress={() => {
+                      setPromo(null);
                       setDiscoId(item.id);
                       setVerified(null);
                       setVerifyError(null);
@@ -325,7 +338,10 @@ export default function BuyElectricityScreen() {
                   amount={value}
                   selected={amount === value}
                   disabled={verify.isPending}
-                  onPress={() => setAmountText(String(value))}
+                  onPress={() => {
+                    setPromo(null);
+                    setAmountText(String(value));
+                  }}
                 />
               ))}
             </View>
@@ -334,7 +350,10 @@ export default function BuyElectricityScreen() {
             label="Enter amount (₦)"
             value={amountText}
             editable={!verify.isPending}
-            onChangeText={(text) => setAmountText(text.replace(/\D/g, '').slice(0, 7))}
+            onChangeText={(text) => {
+              setPromo(null);
+              setAmountText(text.replace(/\D/g, '').slice(0, 7));
+            }}
             placeholder={`${minAmount}-${maxAmount.toLocaleString('en-NG')}`}
             keyboardType="number-pad"
             error={amountError}
@@ -367,6 +386,13 @@ export default function BuyElectricityScreen() {
           ) : null}
         </View>
 
+        <PromoField
+          service="electricity"
+          price={amountIsValid ? amount : null}
+          value={activePromo}
+          onChange={setPromo}
+          disabled={verify.isPending}
+        />
         <Button
           label="Continue"
           onPress={() => void goToConfirm()}

@@ -46,8 +46,8 @@ src/app/                routes only (expo-router)
   (auth)/login.tsx
   (tabs)/               index, services, rewards, history, me
   buy/                  airtime, data, cable, electricity
-  order/[reference].tsx fund, pin, cashback, referrals, notifications, help
-src/api/                client (the only fetch), endpoints, types, errors, account, receipts, query-client, mock*
+  order/[reference].tsx fund, pin, packages, cashback, referrals, notifications, help
+src/api/                client (the only fetch), endpoints, types, errors, account, receipts, query-client
 src/auth/               session, secure token storage
 src/onboarding/         "seen" flag store
 src/purchases/          pending-store (unfinished purchase references), reconcile
@@ -80,7 +80,6 @@ EXPO_PUBLIC_API_URL=
 EXPO_PUBLIC_SPURS_ISSUER=
 EXPO_PUBLIC_SPURS_CLIENT_ID=
 EXPO_PUBLIC_SPURS_REDIRECT_URI=vtuapp://redirect
-EXPO_PUBLIC_USE_MOCK_DATA=true
 EXPO_PUBLIC_IOS_STORE_URL=
 EXPO_PUBLIC_ANDROID_STORE_URL=
 ```
@@ -135,13 +134,10 @@ Bodies and validation are in `api-docs.md`. Behavior you must keep:
 ## Not built yet (do not build against these without checking `api-docs.md`)
 
 - Profile and settings: `PATCH /me` (phone, notification toggles, theme, `confirmPurchases`, `useCashbackDefault`)
-- Packages and upgrades
-- Promo codes: `POST /promo/preview`
 - Push notifications: `POST /devices` (confirm Expo token compatibility with the web app first)
 - Remove PIN: `POST /pin/remove`
 - Support tickets: list, view, reply, close (create exists)
 - `GET /transactions/:reference/receipt`
-- A pending state after account deletion is requested
 - A distinct `network_mismatch` error code for ported-number mismatches. The web API currently returns generic `purchase_failed`; add and document the distinct code before enabling the mobile override.
 
 ## Conventions

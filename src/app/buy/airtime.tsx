@@ -10,6 +10,7 @@ import type { AirtimePurchase } from '@/api/types';
 import { AmountTile } from '@/components/amount-tile';
 import { Button } from '@/components/button';
 import { FilterChip } from '@/components/filter-chip';
+import { PromoField, type AppliedPromo } from '@/components/promo-field';
 import { PurchaseConfirm } from '@/components/purchase-confirm';
 import { PurchaseResultCard } from '@/components/purchase-result';
 import { SummaryRow } from '@/components/summary-row';
@@ -40,6 +41,7 @@ export default function BuyAirtimeScreen() {
   const [amountText, setAmountText] = useState('');
   const [showErrors, setShowErrors] = useState(false);
   const [cashbackChoice, setCashbackChoice] = useState<boolean | null>(null);
+  const [promo, setPromo] = useState<AppliedPromo | null>(null);
 
   const catalog = useQuery({ queryKey: ['catalog', 'airtime'], queryFn: getAirtimeCatalog });
   const slow = useSlowLoading(catalog.isLoading);
@@ -60,6 +62,8 @@ export default function BuyAirtimeScreen() {
     ranges.length > 0 ? Math.min(MAX_AMOUNT, Math.max(...ranges.map((item) => item.max))) : 0;
   const phoneIsValid = isValidPhone(phone);
   const displayPrice = amountIsValid && range ? airtimeDisplayPrice(amount, range.discount) : null;
+  const activePromo =
+    promo && displayPrice !== null && promo.forPrice === displayPrice ? promo : null;
 
   const cashbackBalance = me.data?.cashbackBalance ?? 0;
   const cashbackAvailable = cashbackBalance > 0;
@@ -88,12 +92,14 @@ export default function BuyAirtimeScreen() {
       reference,
       pin,
       useCashback,
+      promoCode: activePromo?.code ?? null,
     }));
   }
 
   function buyAgain() {
     setPhone('');
     setAmountText('');
+    setPromo(null);
     setShowErrors(false);
     flow.finish();
   }
@@ -127,7 +133,7 @@ export default function BuyAirtimeScreen() {
         flow={flow}
         recipientLabel="To"
         recipient={groupPhone(phone)}
-        amount={displayPrice ?? amount}
+        amount={activePromo?.finalPrice ?? displayPrice ?? amount}
         cashback={
           cashbackAvailable
             ? { available: cashbackBalance, value: useCashback, onChange: setCashbackChoice }
@@ -143,6 +149,12 @@ export default function BuyAirtimeScreen() {
         onEdit={flow.back}>
         <SummaryRow label="Network" value={network.name} />
         <SummaryRow label="Airtime" value={formatNaira(amount)} />
+        {activePromo ? (
+          <SummaryRow
+            label={`Promo ${activePromo.code}`}
+            value={`-${formatNaira(activePromo.discount)}`}
+          />
+        ) : null}
         {range && range.discount > 0 ? (
           <SummaryRow label="Discount" value={`${range.discount}%`} />
         ) : null}
@@ -191,6 +203,7 @@ export default function BuyAirtimeScreen() {
                 label={item.name}
                 selected={item.id === network.id}
                 onPress={() => {
+                  setPromo(null);
                   setNetworkId(item.id);
                   setTypeId(null);
                 }}
@@ -204,7 +217,10 @@ export default function BuyAirtimeScreen() {
                   key={item.id}
                   label={item.label}
                   selected={item.id === type.id}
-                  onPress={() => setTypeId(item.id)}
+                  onPress={() => {
+                    setPromo(null);
+                    setTypeId(item.id);
+                  }}
                 />
               ))}
             </View>
@@ -229,7 +245,10 @@ export default function BuyAirtimeScreen() {
           <TextField
             label="Enter amount (₦)"
             value={amountText}
-            onChangeText={(text) => setAmountText(text.replace(/\D/g, '').slice(0, 7))}
+            onChangeText={(text) => {
+              setPromo(null);
+              setAmountText(text.replace(/\D/g, '').slice(0, 7));
+            }}
             placeholder={`${minAmount}-${maxAmount.toLocaleString('en-NG')}`}
             keyboardType="number-pad"
             error={amountError}
@@ -249,13 +268,22 @@ export default function BuyAirtimeScreen() {
                   key={value}
                   amount={value}
                   selected={amount === value}
-                  onPress={() => setAmountText(String(value))}
+                  onPress={() => {
+                    setPromo(null);
+                    setAmountText(String(value));
+                  }}
                 />
               );
             })}
           </View>
         </View>
 
+        <PromoField
+          service="airtime"
+          price={displayPrice}
+          value={activePromo}
+          onChange={setPromo}
+        />
         <Button label="Continue" onPress={goToConfirm} />
       </>
     );

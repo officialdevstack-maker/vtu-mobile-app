@@ -11,11 +11,12 @@ from a wallet. It talks to the Spur VTU web app only through `/api/v1` (see `api
 
 Run a development build (`npx expo run:android` or `npx expo run:ios`), not Expo Go.
 
-## Demo mode
+## Connect to VTU
 
-Development builds use sample data and skip sign-in by default. Demo mode blocks live API
-requests and purchases. Set `EXPO_PUBLIC_USE_MOCK_DATA=false` and restart Expo to test the
-real OAuth flow, onboarding and live API.
+Set `EXPO_PUBLIC_API_URL` to the VTU backend origin (`http://localhost:3700` for local
+development), and configure the Spurs OIDC issuer and mobile client ID. The client ID must be
+registered in the backend's `SPURS_MOBILE_CLIENT_IDS`. The app uses the live `/api/v1` API and
+requires sign-in; use a host reachable from your device or emulator when testing locally.
 
 ## Checks before a PR
 

@@ -1,8 +1,6 @@
 // src/api/account.ts
 
 import { api } from './client';
-import { ApiError } from './errors';
-import { isMockMode } from './mock-mode';
 
 export type CashbackEntry = {
   reference: string;
@@ -27,63 +25,44 @@ export type Referrals = {
   hasReferrer: boolean;
 };
 
-const mockCashback: Cashback = {
-  balance: 75,
-  settings: { enabled: true },
-  history: [
-    {
-      reference: 'demo-cb-1',
-      direction: 'credit',
-      amount: 25,
-      source: 'earn',
-      service: 'data',
-      at: '2026-11-25T11:16:00+01:00',
-    },
-    {
-      reference: 'demo-cb-2',
-      direction: 'credit',
-      amount: 50,
-      source: 'earn',
-      service: 'airtime',
-      at: '2026-11-24T09:10:00+01:00',
-    },
-  ],
+export type PromoService = 'airtime' | 'data' | 'cable' | 'electricity';
+export type PromoPreview = { code: string; discount: number; finalPrice: number };
+
+export type PackageItem = {
+  id: string;
+  name: string;
+  description: string;
+  sortOrder: number;
+  upgradeFee: number;
+  isDefault: boolean;
+  customers: number;
 };
+export type Packages = { current: string; items: PackageItem[] };
 
-const mockReferrals: Referrals = {
-  code: 'DEMO1234',
-  invited: 3,
-  rewarded: 2,
-  earned: 150,
-  waitingOnFirstPurchase: false,
-  hasReferrer: true,
-};
+export const getCashback = () => api.get<Cashback>('/cashback');
 
-function rejectMockAction(): Promise<never> {
-  return Promise.reject(
-    new ApiError(0, 'mock_mode', 'This action is disabled while demo data is active.'),
-  );
-}
+export const getReferrals = () => api.get<Referrals>('/referrals');
 
-export const getCashback = () =>
-  isMockMode ? Promise.resolve(mockCashback) : api.get<Cashback>('/cashback');
+export const applyReferralCode = (code: string) => api.post<unknown>('/referrals', { code });
 
-export const getReferrals = () =>
-  isMockMode ? Promise.resolve(mockReferrals) : api.get<Referrals>('/referrals');
-
-export const applyReferralCode = (code: string) =>
-  isMockMode ? rejectMockAction() : api.post<unknown>('/referrals', { code });
-
-export const setPin = (pin: string) =>
-  isMockMode ? rejectMockAction() : api.post<unknown>('/pin', { pin });
+export const setPin = (pin: string) => api.post<unknown>('/pin', { pin });
 
 export const changePin = (body: { currentPin: string; nextPin: string }) =>
-  isMockMode ? rejectMockAction() : api.post<unknown>('/pin/change', body);
+  api.post<unknown>('/pin/change', body);
 
 export const requestPinReset = () =>
-  isMockMode ? rejectMockAction() : api.post<{ resetUrl: string }>('/pin/reset/request');
+  api.post<{ resetUrl: string }>('/pin/reset/request');
 
 export const requestAccountDeletion = () =>
-  isMockMode
-    ? rejectMockAction()
-    : api.delete<{ deletionRequested: boolean }>('/me/account');
+  api.delete<{ deletionRequested: boolean }>('/me/account');
+
+export const getPackages = () => api.get<Packages>('/packages');
+
+export const upgradePackage = (body: { packageId: string; pin: string }) =>
+  api.post<unknown>('/packages/upgrade', body);
+
+export const previewPromo = (body: {
+  code: string;
+  service: PromoService;
+  price: number;
+}) => api.post<PromoPreview>('/promo/preview', body);

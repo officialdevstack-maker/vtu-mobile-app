@@ -16,7 +16,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getTransactions, getTransactionStatus, isLookupReference } from '@/api/endpoints';
 import { errorMessage } from '@/api/errors';
-import { isMockMode } from '@/api/mock-mode';
 import { shareReceipt } from '@/api/receipts';
 import type { TxService, TxStatus } from '@/api/types';
 import { Button } from '@/components/button';
@@ -102,8 +101,7 @@ export default function OrderScreen() {
     enabled: !item,
   });
 
-  const canLookup =
-    isMockMode || isLookupReference(reference) || reference.startsWith('flw-');
+  const canLookup = isLookupReference(reference) || reference.startsWith('flw-');
   const lookup = useQuery({
     queryKey: ['order', reference],
     queryFn: () => getTransactionStatus(reference),

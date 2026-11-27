@@ -11,6 +11,7 @@ export type ApiErrorCode =
   | 'rate_limited'
   | 'unavailable'
   | 'server_error'
+  | 'configuration_error'
   | 'network_error'
   | 'timeout';
 

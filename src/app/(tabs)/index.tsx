@@ -91,7 +91,7 @@ function greeting(): string {
 export default function HomeScreen() {
   const colors = useColors();
   const { width } = useWindowDimensions();
-  const { isLoading: sessionLoading, isSignedIn, isMockMode, signOut } = useSession();
+  const { isLoading: sessionLoading, isSignedIn, signOut } = useSession();
   const [hidden, setHidden] = useState(false);
   const [promoIndex, setPromoIndex] = useState(0);
   const me = useQuery({ queryKey: ['me'], queryFn: getMe, enabled: isSignedIn });
@@ -153,17 +153,6 @@ export default function HomeScreen() {
           />
         }>
         <View style={styles.container}>
-          {isMockMode ? (
-            <View
-              accessible
-              accessibilityLabel="Demo mode. Sample data only; purchases are disabled."
-              style={[styles.demoBanner, { backgroundColor: colors.primary }]}>
-              <Text style={[styles.demoBannerText, { color: colors.onPrimary }]}>
-                DEMO MODE · Sample data only. Purchases disabled.
-              </Text>
-            </View>
-          ) : null}
-
           <View style={styles.header}>
             <View style={styles.headerLeft}>
               <View
@@ -220,24 +209,22 @@ export default function HomeScreen() {
                   </View>
                 ) : null}
               </Pressable>
-              {isMockMode ? null : (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Sign out"
-                  hitSlop={4}
-                  onPress={() => void signOut()}
-                  style={({ pressed }) => [
-                    styles.iconButton,
-                    { backgroundColor: colors.surface, borderColor: colors.border },
-                    pressed && styles.pressed,
-                  ]}>
-                  <SymbolView
-                    tintColor={colors.text}
-                    name={{ ios: 'rectangle.portrait.and.arrow.right', android: 'logout', web: 'logout' }}
-                    size={16}
-                  />
-                </Pressable>
-              )}
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Sign out"
+                hitSlop={4}
+                onPress={() => void signOut()}
+                style={({ pressed }) => [
+                  styles.iconButton,
+                  { backgroundColor: colors.surface, borderColor: colors.border },
+                  pressed && styles.pressed,
+                ]}>
+                <SymbolView
+                  tintColor={colors.text}
+                  name={{ ios: 'rectangle.portrait.and.arrow.right', android: 'logout', web: 'logout' }}
+                  size={16}
+                />
+              </Pressable>
             </View>
           </View>
 
@@ -260,7 +247,7 @@ export default function HomeScreen() {
                     size={18}
                   />
                   <Text style={[styles.walletLabel, { color: colors.onWalletMuted }]}>
-                    {isMockMode ? 'Demo wallet balance' : 'Wallet balance'}
+                    Wallet balance
                   </Text>
                 </View>
                 <Pressable
@@ -486,9 +473,6 @@ const styles = StyleSheet.create({
   },
   container: { width: '100%', maxWidth: MaxContentWidth, gap: 12 },
   centered: { flex: 1, padding: 16, justifyContent: 'center', gap: 12 },
-  demoBanner: { borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 },
-  demoBannerText: { fontSize: fontSize.sm, fontWeight: '700', textAlign: 'center' },
-
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   headerLeft: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
   headerText: { flexShrink: 1 },

@@ -1,6 +1,6 @@
 // src/app/(tabs)/me.tsx
 
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
@@ -21,6 +21,7 @@ import { getMe } from '@/api/endpoints';
 import { errorMessage } from '@/api/errors';
 import { useSession } from '@/auth/session';
 import { MenuRow } from '@/components/menu-row';
+import { StateView } from '@/components/state-view';
 import { ErrorState, LoadingState } from '@/components/states';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { formatNaira } from '@/lib/format';
@@ -43,12 +44,13 @@ const QUICK = [
 
 export default function MeScreen() {
   const colors = useColors();
-  const { isSignedIn, isMockMode, signOut } = useSession();
+  const queryClient = useQueryClient();
+  const { isSignedIn, signOut } = useSession();
   const [hidden, setHidden] = useState(false);
   const me = useQuery({ queryKey: ['me'], queryFn: getMe, enabled: isSignedIn });
   const deletion = useMutation({
     mutationFn: requestAccountDeletion,
-    onSuccess: () => void signOut(),
+    onSuccess: () => void queryClient.invalidateQueries(),
   });
 
   const profile = me.data;
@@ -56,10 +58,27 @@ export default function MeScreen() {
   const contact = profile?.email ?? profile?.phone ?? (profile ? `@${profile.username}` : '');
   const version = Constants.expoConfig?.version ?? '';
 
+  if (deletion.isSuccess) {
+    return (
+      <SafeAreaView edges={['top']} style={[styles.fill, { backgroundColor: colors.background }]}>
+        <View style={styles.pendingWrap}>
+          <StateView
+            icon={{ ios: 'clock.badge.exclamationmark', android: 'schedule', web: 'schedule' }}
+            title="Deletion requested"
+            message="Your account is suspended and queued for deletion. You can no longer make purchases."
+            actionLabel="Sign out"
+            onAction={() => void signOut()}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   function confirmDelete() {
+    if (deletion.isPending) return;
     Alert.alert(
       'Delete your account?',
-      'Your account will be suspended and queued for deletion. You will be signed out and will not be able to make purchases.',
+      'Your account will be suspended and queued for deletion. Purchases will be disabled immediately.',
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Delete account', style: 'destructive', onPress: () => deletion.mutate() },
@@ -250,6 +269,13 @@ export default function MeScreen() {
                   onPress={() => router.push('/referrals')}
                 />
                 <MenuRow
+                  label="Packages"
+                  subtitle="Upgrade for better prices"
+                  value={profile.package.name}
+                  icon={{ ios: 'star.fill', android: 'star', web: 'star' }}
+                  onPress={() => router.push('/packages')}
+                />
+                <MenuRow
                   label="Notifications"
                   subtitle="Updates on your orders and wallet"
                   value={profile.unreadCount > 0 ? `${profile.unreadCount} new` : undefined}
@@ -278,26 +304,26 @@ export default function MeScreen() {
             </Text>
           ) : null}
 
-          {isMockMode ? null : (
-            <View style={styles.footer}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Sign out"
-                onPress={() => void signOut()}
-                style={({ pressed }) => [styles.footerTouch, pressed && styles.pressed]}>
-                <Text style={[styles.signOut, { color: colors.danger }]}>Sign out</Text>
-              </Pressable>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Delete account"
-                onPress={confirmDelete}
-                style={({ pressed }) => [styles.footerTouch, pressed && styles.pressed]}>
-                <Text style={[styles.deleteText, { color: colors.textSecondary }]}>
-                  Delete account
-                </Text>
-              </Pressable>
-            </View>
-          )}
+          <View style={styles.footer}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Sign out"
+              onPress={() => void signOut()}
+              style={({ pressed }) => [styles.footerTouch, pressed && styles.pressed]}>
+              <Text style={[styles.signOut, { color: colors.danger }]}>Sign out</Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Delete account"
+              accessibilityState={{ disabled: deletion.isPending, busy: deletion.isPending }}
+              disabled={deletion.isPending}
+              onPress={confirmDelete}
+              style={({ pressed }) => [styles.footerTouch, pressed && styles.pressed]}>
+              <Text style={[styles.deleteText, { color: colors.textSecondary }]}>
+                {deletion.isPending ? 'Requesting deletion…' : 'Delete account'}
+              </Text>
+            </Pressable>
+          </View>
 
           {version ? (
             <Text style={[styles.version, { color: colors.textSecondary }]}>Spur VTU v{version}</Text>
@@ -310,6 +336,7 @@ export default function MeScreen() {
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
+  pendingWrap: { flex: 1, padding: 16, justifyContent: 'center' },
   scroll: {
     alignItems: 'center',
     paddingHorizontal: Spacing.three,

@@ -17,10 +17,10 @@ import { useColors } from '@/theme';
 SplashScreen.preventAutoHideAsync();
 
 function RootNavigator() {
-  const { isLoading, isSignedIn, isMockMode } = useSession();
+  const { isLoading, isSignedIn } = useSession();
   const onboarding = useOnboarding();
   const colors = useColors();
-  const pendingRecovery = usePendingReconciler(isSignedIn && !isMockMode);
+  const pendingRecovery = usePendingReconciler(isSignedIn);
 
   useEffect(() => {
     void loadOnboarding();
@@ -67,6 +67,7 @@ function RootNavigator() {
           <Stack.Screen name="cashback" options={{ ...headerOptions, title: 'Cashback' }} />
           <Stack.Screen name="referrals" options={{ ...headerOptions, title: 'Referrals' }} />
           <Stack.Screen name="pin" options={{ ...headerOptions, title: 'Transaction PIN' }} />
+          <Stack.Screen name="packages" options={{ ...headerOptions, title: 'Packages' }} />
         </Stack.Protected>
         <Stack.Protected guard={!isSignedIn && !onboarding.seen}>
           <Stack.Screen name="onboarding" />

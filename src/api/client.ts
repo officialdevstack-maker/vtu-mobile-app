@@ -1,10 +1,10 @@
 // src/api/client.ts
 
 import { ApiError } from './errors';
-import { isMockMode } from './mock-mode';
 import type { ApiResponse } from './types';
 
-const BASE_URL = `${process.env.EXPO_PUBLIC_API_URL ?? ''}/api/v1`;
+const API_URL = process.env.EXPO_PUBLIC_API_URL?.trim().replace(/\/+$/, '');
+const BASE_URL = API_URL ? `${API_URL}/api/v1` : null;
 const TIMEOUT_MS = 15_000;
 
 export type AuthHandlers = {
@@ -78,8 +78,12 @@ async function request<T>(
   path: string,
   options: { query?: Record<string, string | number | undefined>; body?: unknown } = {},
 ): Promise<T> {
-  if (isMockMode) {
-    throw new ApiError(0, 'mock_mode', 'Live API requests are disabled while demo data is active.');
+  if (!BASE_URL) {
+    throw new ApiError(
+      0,
+      'configuration_error',
+      'The API server is not configured. Please try again later.',
+    );
   }
 
   const url = `${BASE_URL}${path}${buildQuery(options.query)}`;

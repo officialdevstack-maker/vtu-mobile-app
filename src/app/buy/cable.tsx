@@ -11,6 +11,7 @@ import type { CablePurchase } from '@/api/types';
 import { Button } from '@/components/button';
 import { FilterChip } from '@/components/filter-chip';
 import { PlanRow } from '@/components/plan-row';
+import { PromoField, type AppliedPromo } from '@/components/promo-field';
 import { PurchaseConfirm } from '@/components/purchase-confirm';
 import { PurchaseResultCard } from '@/components/purchase-result';
 import { SummaryRow } from '@/components/summary-row';
@@ -34,6 +35,7 @@ export default function BuyCableScreen() {
   const [planId, setPlanId] = useState<string | null>(null);
   const [showErrors, setShowErrors] = useState(false);
   const [cashbackChoice, setCashbackChoice] = useState<boolean | null>(null);
+  const [promo, setPromo] = useState<AppliedPromo | null>(null);
   const [verified, setVerified] = useState<Verification | null>(null);
   const [verifyError, setVerifyError] = useState<string | null>(null);
 
@@ -53,6 +55,7 @@ export default function BuyCableScreen() {
     [operator],
   );
   const plan = plans.find((item) => item.id === planId);
+  const activePromo = promo && plan && promo.forPrice === plan.price ? promo : null;
 
   const phoneIsValid = isValidPhone(phone);
   const smartcardIsValid = /^\d{10,11}$/.test(smartcard);
@@ -102,6 +105,7 @@ export default function BuyCableScreen() {
       reference,
       pin,
       useCashback,
+      promoCode: activePromo?.code ?? null,
     }));
   }
 
@@ -109,6 +113,7 @@ export default function BuyCableScreen() {
     setPhone('');
     setSmartcard('');
     setPlanId(null);
+    setPromo(null);
     setShowErrors(false);
     setVerified(null);
     setVerifyError(null);
@@ -144,7 +149,7 @@ export default function BuyCableScreen() {
         flow={flow}
         recipientLabel="Smartcard"
         recipient={smartcard}
-        amount={plan.price}
+        amount={activePromo?.finalPrice ?? plan.price}
         cashback={
           cashbackAvailable
             ? { available: cashbackBalance, value: useCashback, onChange: setCashbackChoice }
@@ -165,6 +170,12 @@ export default function BuyCableScreen() {
         onEdit={flow.back}>
         <SummaryRow label="Provider" value={operator.name} />
         <SummaryRow label="Plan" value={`${plan.name} · ${plan.validity}`} />
+        {activePromo ? (
+          <SummaryRow
+            label={`Promo ${activePromo.code}`}
+            value={`-${formatNaira(activePromo.discount)}`}
+          />
+        ) : null}
         {verification?.name ? <SummaryRow label="Customer" value={verification.name} /> : null}
         <SummaryRow label="Phone number" value={groupPhone(phone)} />
       </PurchaseConfirm>
@@ -189,6 +200,7 @@ export default function BuyCableScreen() {
                 selected={item.id === operator.id}
                 disabled={verify.isPending}
                 onPress={() => {
+                  setPromo(null);
                   setOperatorId(item.id);
                   setPlanId(null);
                   setVerified(null);
@@ -242,7 +254,10 @@ export default function BuyCableScreen() {
                   price={item.price}
                   selected={item.id === plan?.id}
                   disabled={verify.isPending}
-                  onPress={() => setPlanId(item.id)}
+                  onPress={() => {
+                    setPromo(null);
+                    setPlanId(item.id);
+                  }}
                 />
               ))}
             </View>
@@ -279,6 +294,13 @@ export default function BuyCableScreen() {
           ) : null}
         </View>
 
+        <PromoField
+          service="cable"
+          price={plan?.price ?? null}
+          value={activePromo}
+          onChange={setPromo}
+          disabled={verify.isPending}
+        />
         <Button
           label="Continue"
           onPress={() => void goToConfirm()}
