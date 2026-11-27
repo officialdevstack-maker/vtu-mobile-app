@@ -44,7 +44,7 @@ export default function FundScreen() {
     queryFn: getBalance,
     refetchInterval: (query) => {
       if (!waiting) return false;
-      if (Date.parse(waiting.funding.expiresAt) <= Date.now()) return false;
+      if (waiting.funding.expiresAt && Date.parse(waiting.funding.expiresAt) <= Date.now()) return false;
       return (query.state.data?.balance ?? 0) > waiting.startBalance ? false : POLL_MS;
     },
   });
@@ -56,7 +56,11 @@ export default function FundScreen() {
   }, [waiting]);
 
   const credited = !!waiting && (balance.data?.balance ?? 0) > waiting.startBalance;
-  const expired = !!waiting && !credited && Date.parse(waiting.funding.expiresAt) <= now;
+  const expired =
+    !!waiting &&
+    !credited &&
+    !!waiting.funding.expiresAt &&
+    Date.parse(waiting.funding.expiresAt) <= now;
 
   useEffect(() => {
     if (!credited) return;
@@ -166,12 +170,14 @@ export default function FundScreen() {
               <Text style={[styles.note, { color: colors.textSecondary }]}>Amount to send</Text>
               <Text style={[styles.amount, { color: colors.text }]}>{formatNaira(waiting.funding.amount)}</Text>
             </View>
-            <View style={styles.detail}>
-              <Text style={[styles.note, { color: colors.textSecondary }]}>Expires</Text>
-              <Text style={[styles.value, { color: colors.text }]}>
-                {formatLagosDate(waiting.funding.expiresAt)}
-              </Text>
-            </View>
+            {waiting.funding.expiresAt ? (
+              <View style={styles.detail}>
+                <Text style={[styles.note, { color: colors.textSecondary }]}>Expires</Text>
+                <Text style={[styles.value, { color: colors.text }]}>
+                  {formatLagosDate(waiting.funding.expiresAt)}
+                </Text>
+              </View>
+            ) : null}
             <View
               accessibilityLiveRegion="polite"
               style={[styles.status, { backgroundColor: colors.background, borderColor: colors.border }]}>
@@ -231,19 +237,29 @@ export default function FundScreen() {
               <View
                 key={item.reference}
                 accessible
-                accessibilityLabel={`${formatNaira(item.amountKobo / 100)} to ${item.bankName}, account ${item.accountNumber}`}
+                accessibilityLabel={`${formatNaira(item.amountKobo / 100)}${
+                  item.bankName && item.accountNumber
+                    ? ` to ${item.bankName}, account ${item.accountNumber}`
+                    : ''
+                }`}
                 style={styles.pendingRow}>
                 <View style={styles.pendingText}>
                   <Text style={[styles.value, styles.left, { color: colors.text }]}>
                     {formatNaira(item.amountKobo / 100)}
                   </Text>
-                  <Text style={[styles.note, { color: colors.textSecondary }]}>
-                    {item.bankName} · {item.accountNumber}
-                  </Text>
+                  {item.bankName && item.accountNumber ? (
+                    <Text style={[styles.note, { color: colors.textSecondary }]}>
+                      {item.bankName} · {item.accountNumber}
+                    </Text>
+                  ) : (
+                    <Text style={[styles.note, { color: colors.textSecondary }]}>Preparing account</Text>
+                  )}
                 </View>
-                <Text style={[styles.note, { color: colors.textSecondary }]}>
-                  Expires {formatLagosDate(item.expiresAt)}
-                </Text>
+                {item.expiresAt ? (
+                  <Text style={[styles.note, { color: colors.textSecondary }]}>
+                    Expires {formatLagosDate(item.expiresAt)}
+                  </Text>
+                ) : null}
               </View>
             ))}
           </View>

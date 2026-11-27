@@ -48,16 +48,16 @@ export type FundingAccount = { accountNumber: string; bankName: string; accountN
 export type PendingFunding = {
   reference: string;
   amountKobo: number;
-  accountNumber: string;
-  bankName: string;
+  accountNumber: string | null;
+  bankName: string | null;
   status: string;
-  expiresAt: string;
+  expiresAt: string | null;
 };
 export type FundingOptions = { permanent: FundingAccount | null; pending: PendingFunding[] };
 export type TemporaryFunding = FundingAccount & {
   amount: number;
   reference: string;
-  expiresAt: string;
+  expiresAt: string | null;
 };
 
 export type SupportTicketInput = { subject: string; body: string; transactionId?: string };
