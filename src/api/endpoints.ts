@@ -9,6 +9,11 @@ import {
   mockCableCatalog,
   mockDataCatalog,
   mockElectricityCatalog,
+  mockFunding,
+  mockMe,
+  mockNotifications,
+  markMockNotificationsRead,
+  rejectMockAction,
   rejectMockPurchase,
   verifyMockMeter,
   verifyMockSmartcard,
@@ -24,10 +29,17 @@ import type {
   DataPurchase,
   ElectricityCatalog,
   ElectricityPurchase,
+  FundingAccount,
+  FundingOptions,
+  Me,
   MeterType,
   MeterVerification,
+  NotificationList,
   PurchaseResult,
   SmartcardVerification,
+  SupportTicketCreated,
+  SupportTicketInput,
+  TemporaryFunding,
   TransactionFilters,
   TransactionPage,
   TransactionStatus,
@@ -41,6 +53,27 @@ export function isLookupReference(reference: string): boolean {
 
 export const getBalance = () =>
   isMockMode ? Promise.resolve(mockBalance) : api.get<Balance>('/balance');
+export const getMe = () => (isMockMode ? Promise.resolve(mockMe) : api.get<Me>('/me'));
+export const getNotifications = () =>
+  isMockMode
+    ? Promise.resolve(mockNotifications)
+    : api.get<NotificationList>('/notifications', { limit: 50 });
+export const markNotificationsRead = () =>
+  isMockMode
+    ? Promise.resolve(markMockNotificationsRead())
+    : api.post<{ read: boolean }>('/notifications/read');
+export const getFunding = () =>
+  isMockMode ? Promise.resolve(mockFunding) : api.get<FundingOptions>('/wallet/funding');
+export const createPermanentAccount = (bvn: string) =>
+  isMockMode
+    ? rejectMockAction()
+    : api.post<FundingAccount>('/wallet/funding/permanent', { bvn });
+export const createTemporaryAccount = (amount: number) =>
+  isMockMode
+    ? rejectMockAction()
+    : api.post<TemporaryFunding>('/wallet/funding/temporary', { amount });
+export const createSupportTicket = (body: SupportTicketInput) =>
+  isMockMode ? rejectMockAction() : api.post<SupportTicketCreated>('/support', body);
 export const getAirtimeCatalog = () =>
   isMockMode ? Promise.resolve(mockAirtimeCatalog) : api.get<AirtimeCatalog>('/catalog/airtime');
 export const getDataCatalog = () =>

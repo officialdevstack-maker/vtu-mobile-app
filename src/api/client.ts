@@ -19,7 +19,7 @@ export function configureApiClient(next: AuthHandlers): void {
   handlers = next;
 }
 
-type Method = 'GET' | 'POST';
+type Method = 'GET' | 'POST' | 'DELETE';
 
 function buildQuery(params?: Record<string, string | number | undefined>): string {
   if (!params) return '';
@@ -102,4 +102,5 @@ export const api = {
   get: <T>(path: string, query?: Record<string, string | number | undefined>) =>
     request<T>('GET', path, { query }),
   post: <T>(path: string, body?: unknown) => request<T>('POST', path, { body }),
+  delete: <T>(path: string) => request<T>('DELETE', path),
 };

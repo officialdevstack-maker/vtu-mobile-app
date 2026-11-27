@@ -22,6 +22,9 @@ export const palette = {
     onPrimary: brand.petrol,
     success: brand.green,
     danger: brand.coral,
+    wallet: brand.petrol,
+    onWallet: brand.paper,
+    onWalletMuted: '#BCD0D4',
   },
   dark: {
     background: '#0C2227',
@@ -33,13 +36,26 @@ export const palette = {
     onPrimary: brand.petrol,
     success: '#3DBE7A',
     danger: '#E8735C',
+    wallet: '#17424B',
+    onWallet: brand.paper,
+    onWalletMuted: '#BCD0D4',
   },
 } as const;
 
 export type Palette = (typeof palette)['light'] | (typeof palette)['dark'];
 
 export const radius = 12;
-export const MIN_TOUCH = 48;
+export const MIN_TOUCH = 44;
+
+export const fontSize = {
+  xs: 11,
+  sm: 12,
+  base: 14,
+  md: 16,
+  lg: 18,
+  xl: 22,
+  balance: 28,
+} as const;
 
 export function useColors(): Palette {
   const scheme = useColorScheme();

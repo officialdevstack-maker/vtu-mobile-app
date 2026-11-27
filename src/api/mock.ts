@@ -1,12 +1,16 @@
 import { ApiError } from './errors';
 import type {
   AirtimeCatalog,
+  AppNotification,
   Balance,
   CableCatalog,
   DataCatalog,
   ElectricityCatalog,
+  FundingOptions,
   MeterType,
   MeterVerification,
+  Me,
+  NotificationList,
   SmartcardVerification,
   TransactionFilters,
   TransactionItem,
@@ -17,6 +21,60 @@ import type {
 export const mockBalance: Balance = {
   balance: 16500,
   currency: 'NGN',
+};
+
+export const mockMe: Me = {
+  id: 'demo-user',
+  name: 'Demo Customer',
+  username: 'demo',
+  phone: null,
+  email: null,
+  status: 'active',
+  verified: true,
+  package: { id: 'basic', name: 'Basic' },
+  hasPin: true,
+  pinRequired: true,
+  locked: false,
+  walletBalance: 16500,
+  cashbackBalance: 0,
+  unreadCount: 2,
+  useCashbackDefault: false,
+  confirmPurchases: true,
+};
+
+const mockNotificationItems: AppNotification[] = [
+  {
+    id: 'demo-n1',
+    title: 'Purchase successful',
+    body: 'Your MTN 5 GB data purchase went through.',
+    read: false,
+    at: '2026-11-25T11:16:00+01:00',
+  },
+  {
+    id: 'demo-n2',
+    title: 'Wallet funded',
+    body: 'Your wallet was credited with ₦20,000.00.',
+    read: false,
+    at: '2026-11-25T09:31:00+01:00',
+  },
+  {
+    id: 'demo-n3',
+    title: 'Welcome to Spur VTU',
+    body: 'Buy airtime, data, cable TV and electricity from one wallet.',
+    read: true,
+    at: '2026-11-20T10:00:00+01:00',
+  },
+];
+
+export const mockNotifications: NotificationList = { items: mockNotificationItems };
+
+export const mockFunding: FundingOptions = {
+  permanent: {
+    accountNumber: '0123456789',
+    bankName: 'Demo Bank',
+    accountName: 'Demo Customer',
+  },
+  pending: [],
 };
 
 const mockTransactions: TransactionItem[] = [
@@ -173,4 +231,18 @@ export function rejectMockPurchase(): Promise<never> {
   return Promise.reject(
     new ApiError(0, 'mock_mode', 'Purchases are disabled while demo data is active.'),
   );
+}
+
+export function rejectMockAction(): Promise<never> {
+  return Promise.reject(
+    new ApiError(0, 'mock_mode', 'This action is disabled while demo data is active.'),
+  );
+}
+
+export function markMockNotificationsRead(): { read: true } {
+  mockNotificationItems.forEach((item) => {
+    item.read = true;
+  });
+  mockMe.unreadCount = 0;
+  return { read: true };
 }

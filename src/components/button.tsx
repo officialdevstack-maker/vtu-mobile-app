@@ -2,7 +2,7 @@
 
 import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
 
-import { MIN_TOUCH, radius, useColors } from '@/theme';
+import { MIN_TOUCH, fontSize, radius, useColors } from '@/theme';
 
 type ButtonProps = {
   label: string;
@@ -54,11 +54,11 @@ const styles = StyleSheet.create({
   base: {
     minHeight: MIN_TOUCH,
     borderRadius: radius,
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  label: { fontSize: 16, fontWeight: '700' },
+  label: { fontSize: fontSize.base + 1, fontWeight: '700' },
   inactive: { opacity: 0.55 },
   pressed: { opacity: 0.85 },
 });

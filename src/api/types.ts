@@ -11,6 +11,53 @@ export type MeterType = 'prepaid' | 'postpaid';
 
 export type Balance = { balance: number; currency: 'NGN' };
 
+export type Me = {
+  id: string;
+  name: string;
+  username: string;
+  phone: string | null;
+  email: string | null;
+  status: string;
+  verified: boolean;
+  package: { id: string; name: string };
+  hasPin: boolean;
+  pinRequired: boolean;
+  locked: boolean;
+  walletBalance: number;
+  cashbackBalance: number;
+  unreadCount: number;
+  useCashbackDefault: boolean;
+  confirmPurchases: boolean;
+};
+
+export type AppNotification = {
+  id: string;
+  title: string;
+  body: string;
+  read: boolean;
+  at: string;
+};
+export type NotificationList = { items: AppNotification[] };
+
+export type FundingAccount = { accountNumber: string; bankName: string; accountName: string };
+export type PendingFunding = {
+  reference: string;
+  amountKobo: number;
+  accountNumber: string;
+  bankName: string;
+  status: string;
+  expiresAt: string;
+};
+export type FundingOptions = { permanent: FundingAccount | null; pending: PendingFunding[] };
+export type TemporaryFunding = FundingAccount & {
+  amount: number;
+  reference: string;
+  expiresAt: string;
+};
+
+export type SupportTicketInput = { subject: string; body: string; transactionId?: string };
+export type SupportTicketCreated = { id: string };
+
 export type AirtimeRange = { min: number; max: number; discount: number };
 export type AirtimeType = { id: string; label: string; ranges: AirtimeRange[] };
 export type AirtimeNetwork = { id: string; name: string; types: AirtimeType[] };
