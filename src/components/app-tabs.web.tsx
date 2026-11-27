@@ -19,6 +19,9 @@ export default function AppTabs() {
           <TabTrigger name="services" href="/services">
             <TabButton>Services</TabButton>
           </TabTrigger>
+          <TabTrigger name="rewards" href="/rewards">
+            <TabButton>Rewards</TabButton>
+          </TabTrigger>
           <TabTrigger name="history" href="/history">
             <TabButton>History</TabButton>
           </TabTrigger>

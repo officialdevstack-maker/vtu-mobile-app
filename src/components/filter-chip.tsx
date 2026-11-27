@@ -6,23 +6,26 @@ type FilterChipProps = {
   label: string;
   selected: boolean;
   onPress: () => void;
+  disabled?: boolean;
 };
 
-export function FilterChip({ label, selected, onPress }: FilterChipProps) {
+export function FilterChip({ label, selected, onPress, disabled = false }: FilterChipProps) {
   const colors = useColors();
 
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`Filter: ${label}`}
-      accessibilityState={{ selected }}
+      accessibilityState={{ selected, disabled }}
       hitSlop={{ top: 6, bottom: 6 }}
+      disabled={disabled}
       onPress={onPress}
       style={({ pressed }) => [
         styles.chip,
         selected
           ? { backgroundColor: colors.primary, borderColor: colors.primary }
           : { backgroundColor: colors.surface, borderColor: colors.border },
+        disabled && styles.disabled,
         pressed && styles.pressed,
       ]}>
       <Text style={[styles.label, { color: selected ? colors.onPrimary : colors.text }]}>{label}</Text>
@@ -40,5 +43,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   label: { fontSize: fontSize.sm + 1, fontWeight: '700' },
+  disabled: { opacity: 0.55 },
   pressed: { opacity: 0.85 },
 });

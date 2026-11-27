@@ -25,6 +25,11 @@ export default function AppTabs() {
         <NativeTabs.Trigger.Icon sf="square.grid.2x2.fill" md="apps" />
       </NativeTabs.Trigger>
 
+      <NativeTabs.Trigger name="rewards">
+        <NativeTabs.Trigger.Label>Rewards</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="gift.fill" md="redeem" />
+      </NativeTabs.Trigger>
+
       <NativeTabs.Trigger name="history">
         <NativeTabs.Trigger.Label>History</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf="clock.fill" md="history" />
