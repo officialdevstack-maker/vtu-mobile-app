@@ -1,5 +1,7 @@
 // src/api/client.ts
 
+import * as Sentry from '@sentry/react-native';
+
 import { ApiError } from './errors';
 import type { ApiResponse } from './types';
 
@@ -37,6 +39,21 @@ function refreshOnce(): Promise<string | null> {
 }
 
 type Method = 'GET' | 'POST' | 'DELETE';
+
+function reportApiFailure(error: unknown, method: Method): void {
+  Sentry.withScope((scope) => {
+    scope.setTag('error.source', 'api');
+    scope.setTag('api.method', method);
+    if (error instanceof ApiError) {
+      scope.setTag('api.status', String(error.status));
+      scope.setTag('api.error_code', error.code);
+      scope.setFingerprint(['api-request', method, error.code]);
+    } else {
+      scope.setFingerprint(['api-request', method, 'unexpected']);
+    }
+    Sentry.captureException(new Error('API request failed'));
+  });
+}
 
 function buildQuery(params?: Record<string, string | number | undefined>): string {
   if (!params) return '';
@@ -95,28 +112,34 @@ async function request<T>(
   path: string,
   options: { query?: Record<string, string | number | undefined>; body?: unknown } = {},
 ): Promise<T> {
-  if (!BASE_URL) {
-    throw new ApiError(
-      0,
-      'configuration_error',
-      'The API server is not configured. Please try again later.',
-    );
-  }
-
-  const url = `${BASE_URL}${path}${buildQuery(options.query)}`;
-  const token = (await handlers?.getAccessToken()) ?? null;
-  let response = await send(method, url, token, options.body);
-
-  if (response.status === 401 && handlers) {
-    const fresh = await refreshOnce();
-    if (!fresh) {
-      handlers.onSignedOut();
-      return parse<T>(response);
+  try {
+    if (!BASE_URL) {
+      throw new ApiError(
+        0,
+        'configuration_error',
+        'The API server is not configured. Please try again later.',
+      );
     }
-    response = await send(method, url, fresh, options.body);
-    if (response.status === 401) handlers.onSignedOut();
+
+    const url = `${BASE_URL}${path}${buildQuery(options.query)}`;
+    const token = (await handlers?.getAccessToken()) ?? null;
+    let response = await send(method, url, token, options.body);
+
+    if (response.status === 401 && handlers) {
+      const fresh = await refreshOnce();
+      if (!fresh) {
+        handlers.onSignedOut();
+        return await parse<T>(response);
+      }
+      response = await send(method, url, fresh, options.body);
+      if (response.status === 401) handlers.onSignedOut();
+    }
+
+    return await parse<T>(response);
+  } catch (error) {
+    reportApiFailure(error, method);
+    throw error;
   }
-  return parse<T>(response);
 }
 
 export const api = {
