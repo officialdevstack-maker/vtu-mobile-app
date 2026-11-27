@@ -1,7 +1,14 @@
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeIn, FadeInDown, FadeOut, useReducedMotion } from 'react-native-reanimated';
+import Animated, {
+  FadeIn,
+  FadeInDown,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { useSession } from '@/auth/session';
 import { reportError } from '@/lib/report-error';
@@ -14,25 +21,39 @@ export function SplashOverlay() {
   const { isLoading } = useSession();
   const reduceMotion = useReducedMotion();
   const [minElapsed, setMinElapsed] = useState(false);
+  const [gone, setGone] = useState(false);
+  const opacity = useSharedValue(1);
 
   useEffect(() => {
     const timer = setTimeout(() => setMinElapsed(true), MIN_VISIBLE_MS);
     return () => clearTimeout(timer);
   }, []);
 
-  if (minElapsed && !isLoading) return null;
+  const ready = minElapsed && !isLoading;
+
+  useEffect(() => {
+    if (!ready || reduceMotion) return;
+
+    opacity.value = withTiming(0, { duration: FADE_OUT_MS });
+    const timer = setTimeout(() => setGone(true), FADE_OUT_MS);
+    return () => clearTimeout(timer);
+  }, [ready, reduceMotion, opacity]);
+
+  const fadeStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
+
+  if (gone || (ready && reduceMotion)) return null;
 
   return (
     <Animated.View
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
-      exiting={reduceMotion ? undefined : FadeOut.duration(FADE_OUT_MS)}
+      pointerEvents={ready ? 'none' : 'auto'}
       onLayout={() => {
         void SplashScreen.hideAsync().catch(() => {
           reportError({ source: 'splash.hide' });
         });
       }}
-      style={styles.overlay}>
+      style={[styles.overlay, fadeStyle]}>
       <View style={styles.center}>
         <View style={styles.mark}>
           <Text style={styles.markText}>S</Text>
