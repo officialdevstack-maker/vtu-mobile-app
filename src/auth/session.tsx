@@ -1,7 +1,16 @@
 // src/auth/session.tsx
 
 import * as AuthSession from 'expo-auth-session';
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 
 import { configureApiClient } from '@/api/client';
 import { queryClient } from '@/api/query-client';
@@ -16,24 +25,26 @@ type SessionContextValue = {
   signOut: () => Promise<void>;
 };
 
+type TokenPair = { access: string | null; refresh: string | null };
+
 const SessionContext = createContext<SessionContextValue | null>(null);
 
 export function SessionProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [refreshToken, setRefreshToken] = useState<string | null>(null);
+  const tokens = useRef<TokenPair>({ access: null, refresh: null });
 
   const signIn = useCallback(async (nextAccessToken: string, nextRefreshToken?: string | null) => {
+    tokens.current = { access: nextAccessToken, refresh: nextRefreshToken ?? null };
     await saveTokens({ accessToken: nextAccessToken, refreshToken: nextRefreshToken ?? null });
     setAccessToken(nextAccessToken);
-    setRefreshToken(nextRefreshToken ?? null);
   }, []);
 
   const signOut = useCallback(async () => {
+    tokens.current = { access: null, refresh: null };
     await clearTokens();
     queryClient.clear();
     setAccessToken(null);
-    setRefreshToken(null);
   }, []);
 
   useEffect(() => {
@@ -41,15 +52,18 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     void loadTokens()
       .then((session) => {
         if (!mounted) return;
+        tokens.current = {
+          access: session?.accessToken ?? null,
+          refresh: session?.refreshToken ?? null,
+        };
         setAccessToken(session?.accessToken ?? null);
-        setRefreshToken(session?.refreshToken ?? null);
         setIsLoading(false);
       })
       .catch(() => {
         reportError({ source: 'auth.session_restore' });
         if (!mounted) return;
+        tokens.current = { access: null, refresh: null };
         setAccessToken(null);
-        setRefreshToken(null);
         setIsLoading(false);
       });
     return () => {
@@ -59,8 +73,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     configureApiClient({
-      getAccessToken: () => Promise.resolve(accessToken),
+      getAccessToken: () => Promise.resolve(tokens.current.access),
       refresh: async () => {
+        const refreshToken = tokens.current.refresh;
         if (!refreshToken) return null;
         const issuer = process.env.EXPO_PUBLIC_SPURS_ISSUER;
         if (!issuer) return null;
@@ -76,19 +91,20 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           throw error;
         }
         if (!response.accessToken) return null;
+        const nextRefreshToken = response.refreshToken ?? refreshToken;
+        tokens.current = { access: response.accessToken, refresh: nextRefreshToken };
         await saveTokens({
           accessToken: response.accessToken,
-          refreshToken: response.refreshToken ?? refreshToken,
+          refreshToken: nextRefreshToken,
         });
         setAccessToken(response.accessToken);
-        setRefreshToken(response.refreshToken ?? refreshToken);
         return response.accessToken;
       },
       onSignedOut: () => {
         void signOut();
       },
     });
-  }, [accessToken, refreshToken, signOut]);
+  }, [signOut]);
 
   const value = useMemo<SessionContextValue>(
     () => ({
