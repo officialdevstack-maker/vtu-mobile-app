@@ -10,6 +10,11 @@ export type TxDirection = 'debit' | 'credit';
 export type MeterType = 'prepaid' | 'postpaid';
 
 export type Balance = { balance: number; currency: 'NGN' };
+export type AppConfig = {
+  minimumVersion: string | null;
+  maintenance: boolean;
+  maintenanceMessage: string | null;
+};
 
 export type Me = {
   id: string;
@@ -119,12 +124,17 @@ type PurchaseBase = {
 };
 
 export type AirtimePurchase = PurchaseBase & {
+  skipNetworkCheck?: boolean;
   networkId: string;
   typeId: string;
   amount: number;
   phone: string;
 };
-export type DataPurchase = PurchaseBase & { planId: string; phone: string };
+export type DataPurchase = PurchaseBase & {
+  planId: string;
+  phone: string;
+  skipNetworkCheck?: boolean;
+};
 export type CablePurchase = PurchaseBase & { planId: string; smartcard: string; phone: string };
 export type ElectricityPurchase = PurchaseBase & {
   discoId: string;

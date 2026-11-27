@@ -1,24 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { SymbolView } from 'expo-symbols';
 import { useMemo, useState } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  RefreshControl,
-  SectionList,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Pressable, RefreshControl, SectionList, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getNotifications, markNotificationsRead } from '@/api/endpoints';
 import { errorMessage } from '@/api/errors';
 import type { AppNotification, NotificationList } from '@/api/types';
-import { Button } from '@/components/button';
 import { FilterChip } from '@/components/filter-chip';
+import { EmptyState, ErrorState, LoadingState } from '@/components/states';
 import { MaxContentWidth } from '@/constants/theme';
 import { groupByDay, type DaySection } from '@/lib/group-by-day';
+import { useSlowLoading } from '@/hooks/use-slow-loading';
 import { fontSize, MIN_TOUCH, radius, useColors } from '@/theme';
 
 type Filter = 'all' | 'unread';
@@ -35,6 +28,7 @@ export default function NotificationsScreen() {
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState<Filter>('all');
   const query = useQuery({ queryKey: ['notifications'], queryFn: getNotifications, staleTime: 0 });
+  const slow = useSlowLoading(query.isLoading);
 
   const markRead = useMutation<Awaited<ReturnType<typeof markNotificationsRead>>, Error, void, MarkReadContext>({
     mutationFn: markNotificationsRead,
@@ -102,18 +96,16 @@ export default function NotificationsScreen() {
   );
 
   const empty = query.isLoading ? (
-    <ActivityIndicator color={colors.text} style={styles.state} />
+    <LoadingState slow={slow} />
   ) : query.isError ? (
-    <View style={[styles.state, styles.gap]}>
-      <Text accessibilityRole="alert" style={[styles.error, { color: colors.danger }]}>
-        {errorMessage(query.error)}
-      </Text>
-      <Button label="Retry" variant="secondary" onPress={() => void query.refetch()} />
-    </View>
+    <ErrorState error={query.error} onRetry={() => void query.refetch()} />
+  ) : filter === 'unread' ? (
+    <EmptyState title="You're all caught up" message="You have no unread notifications." />
   ) : (
-    <Text style={[styles.body, styles.state, { color: colors.textSecondary }]}>
-      {filter === 'unread' ? 'You are all caught up.' : 'No notifications yet.'}
-    </Text>
+    <EmptyState
+      title="No notifications yet"
+      message="Updates on your orders and wallet will show up here."
+    />
   );
 
   return (

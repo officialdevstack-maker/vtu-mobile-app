@@ -3,12 +3,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getCashback, getReferrals } from '@/api/account';
-import { errorMessage } from '@/api/errors';
 import { Button } from '@/components/button';
+import { ErrorState, LoadingState } from '@/components/states';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { formatNaira } from '@/lib/format';
 import { fontSize, radius, useColors } from '@/theme';
@@ -53,18 +53,9 @@ export default function RewardsScreen() {
               <Text style={[styles.cardTitle, { color: colors.text }]}>Cashback</Text>
             </View>
             {cashback.isLoading ? (
-              <ActivityIndicator color={colors.text} style={styles.state} />
+              <LoadingState compact />
             ) : cashback.isError || !cashback.data ? (
-              <View style={styles.state}>
-                <Text accessibilityRole="alert" style={[styles.error, { color: colors.danger }]}>
-                  {errorMessage(cashback.error)}
-                </Text>
-                <Button
-                  label="Retry"
-                  variant="secondary"
-                  onPress={() => void cashback.refetch()}
-                />
-              </View>
+              <ErrorState compact error={cashback.error} onRetry={() => void cashback.refetch()} />
             ) : (
               <>
                 <Text style={[styles.amount, { color: colors.text }]}>
@@ -96,18 +87,9 @@ export default function RewardsScreen() {
               <Text style={[styles.cardTitle, { color: colors.text }]}>Referrals</Text>
             </View>
             {referrals.isLoading ? (
-              <ActivityIndicator color={colors.text} style={styles.state} />
+              <LoadingState compact />
             ) : referrals.isError || !referrals.data ? (
-              <View style={styles.state}>
-                <Text accessibilityRole="alert" style={[styles.error, { color: colors.danger }]}>
-                  {errorMessage(referrals.error)}
-                </Text>
-                <Button
-                  label="Retry"
-                  variant="secondary"
-                  onPress={() => void referrals.refetch()}
-                />
-              </View>
+              <ErrorState compact error={referrals.error} onRetry={() => void referrals.refetch()} />
             ) : (
               <>
                 <Text style={[styles.detail, { color: colors.textSecondary }]}>

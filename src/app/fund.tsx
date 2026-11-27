@@ -15,9 +15,11 @@ import { errorMessage } from '@/api/errors';
 import type { TemporaryFunding } from '@/api/types';
 import { AccountCard } from '@/components/account-card';
 import { Button } from '@/components/button';
+import { ErrorState, LoadingState } from '@/components/states';
 import { TextField } from '@/components/text-field';
 import { MaxContentWidth } from '@/constants/theme';
 import { formatLagosDate, formatNaira } from '@/lib/format';
+import { useSlowLoading } from '@/hooks/use-slow-loading';
 import { radius, useColors } from '@/theme';
 
 const MIN_AMOUNT = 100;
@@ -36,6 +38,7 @@ export default function FundScreen() {
   const [now, setNow] = useState(() => Date.now());
 
   const funding = useQuery({ queryKey: ['funding'], queryFn: getFunding });
+  const slow = useSlowLoading(funding.isLoading);
   const balance = useQuery({
     queryKey: ['balance'],
     queryFn: getBalance,
@@ -108,16 +111,9 @@ export default function FundScreen() {
 
   let body;
   if (funding.isLoading) {
-    body = <ActivityIndicator color={colors.text} style={styles.state} />;
+    body = <LoadingState slow={slow} />;
   } else if (funding.isError || !funding.data) {
-    body = (
-      <View style={[styles.state, styles.gap]}>
-        <Text accessibilityRole="alert" style={[styles.error, { color: colors.danger }]}>
-          {errorMessage(funding.error)}
-        </Text>
-        <Button label="Try again" variant="secondary" onPress={() => void funding.refetch()} />
-      </View>
-    );
+    body = <ErrorState error={funding.error} onRetry={() => void funding.refetch()} />;
   } else {
     const pending = funding.data.pending;
     body = (

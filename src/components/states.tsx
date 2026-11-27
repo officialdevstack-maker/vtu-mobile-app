@@ -1,6 +1,7 @@
 import { Linking, ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
 import { errorMessage, isApiError } from '@/api/errors';
+import { useSession } from '@/auth/session';
 import { StateView } from '@/components/state-view';
 import { fontSize, useColors } from '@/theme';
 
@@ -63,7 +64,6 @@ type ErrorStateProps = {
   error?: unknown;
   title?: string;
   onRetry?: () => void;
-  onSignedOut?: () => void;
   compact?: boolean;
 };
 
@@ -71,16 +71,48 @@ export function ErrorState({
   error,
   title = 'Something went wrong',
   onRetry,
-  onSignedOut,
   compact,
 }: ErrorStateProps) {
+  const { signOut } = useSession();
+
   if (isApiError(error)) {
-    if (error.code === 'network_error') return <NoInternetState onRetry={onRetry} compact={compact} />;
-    if (error.code === 'timeout') return <SlowNetworkState onRetry={onRetry} compact={compact} />;
-    if (error.code === 'unauthorized' && onSignedOut) {
-      return <SessionExpiredState onSignIn={onSignedOut} compact={compact} />;
+    if (error.code === 'network_error') {
+      return <NoInternetState onRetry={onRetry} compact={compact} />;
+    }
+    if (error.code === 'timeout') {
+      return <SlowNetworkState onRetry={onRetry} compact={compact} />;
+    }
+    if (error.code === 'unauthorized') {
+      return <SessionExpiredState onSignIn={() => void signOut()} compact={compact} />;
     }
     if (error.code === 'forbidden') return <PermissionDeniedState compact={compact} />;
+    if (error.code === 'account_suspended') {
+      return (
+        <StateView
+          alert
+          compact={compact}
+          tone="danger"
+          icon={{ ios: 'person.crop.circle.badge.exclamationmark', android: 'block', web: 'block' }}
+          title="Account suspended"
+          message={error.message}
+          actionLabel="Sign out"
+          onAction={() => void signOut()}
+        />
+      );
+    }
+    if (error.code === 'rate_limited') {
+      return (
+        <StateView
+          alert
+          compact={compact}
+          icon={{ ios: 'hourglass', android: 'hourglass_top', web: 'hourglass_top' }}
+          title="Too many requests"
+          message={`Please wait ${error.retryAfterSeconds ?? 60} seconds and try again.`}
+          actionLabel={onRetry ? 'Try again' : undefined}
+          onAction={onRetry}
+        />
+      );
+    }
   }
   return (
     <StateView

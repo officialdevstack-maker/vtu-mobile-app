@@ -753,6 +753,8 @@ Purchase submissions accept common optional fields:
 
 API-key clients automatically bypass PIN verification.
 
+The current web API wraps ported-number mismatch refusals in the same `purchase_failed` code as other purchase errors. The mobile app cannot safely offer a "buy anyway" action from the error code until the web API returns a distinct `network_mismatch` code before charging. Keep the override disabled until that response contract is implemented and documented.
+
 ### Airtime
 
 ```http

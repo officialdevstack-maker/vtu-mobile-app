@@ -4,13 +4,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { openBrowserAsync } from 'expo-web-browser';
 import { useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { changePin, requestPinReset, setPin } from '@/api/account';
 import { getMe } from '@/api/endpoints';
 import { errorMessage } from '@/api/errors';
 import { Button } from '@/components/button';
+import { ErrorState, LoadingState, SuccessState } from '@/components/states';
 import { TextField } from '@/components/text-field';
 import { MaxContentWidth } from '@/constants/theme';
 import { useColors } from '@/theme';
@@ -55,13 +56,20 @@ export default function PinScreen() {
     save.mutate(input);
   }
 
-  if (me.isLoading) return <SafeAreaView edges={['bottom']} style={[styles.screen, { backgroundColor: colors.background }]}><ActivityIndicator color={colors.text} style={styles.state} /></SafeAreaView>;
+  if (me.isLoading) {
+    return (
+      <SafeAreaView edges={['bottom']} style={[styles.screen, { backgroundColor: colors.background }]}>
+        <View style={styles.centered}>
+          <LoadingState />
+        </View>
+      </SafeAreaView>
+    );
+  }
   if (me.isError || !me.data) {
     return (
       <SafeAreaView edges={['bottom']} style={[styles.screen, { backgroundColor: colors.background }]}>
-        <View style={[styles.centered, styles.gap]}>
-          <Text accessibilityRole="alert" style={[styles.error, { color: colors.danger }]}>{errorMessage(me.error)}</Text>
-          <Button label="Try again" variant="secondary" onPress={() => void me.refetch()} />
+        <View style={styles.centered}>
+          <ErrorState error={me.error} onRetry={() => void me.refetch()} />
         </View>
       </SafeAreaView>
     );
@@ -69,10 +77,12 @@ export default function PinScreen() {
   if (save.isSuccess) {
     return (
       <SafeAreaView edges={['bottom']} style={[styles.screen, { backgroundColor: colors.background }]}>
-        <View style={[styles.centered, styles.gap]}>
-          <Text accessibilityRole="header" accessibilityLiveRegion="polite" style={[styles.title, { color: colors.text }]}>PIN saved</Text>
-          <Text style={[styles.body, { color: colors.textSecondary }]}>You will use this PIN to confirm purchases.</Text>
-          <Button label="Done" onPress={() => router.back()} />
+        <View style={styles.centered}>
+          <SuccessState
+            title="PIN saved"
+            message="You will use this PIN to confirm purchases."
+            onAction={() => router.back()}
+          />
         </View>
       </SafeAreaView>
     );

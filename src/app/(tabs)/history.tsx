@@ -14,7 +14,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getTransactions } from '@/api/endpoints';
 import { errorMessage } from '@/api/errors';
-import { useSession } from '@/auth/session';
 import type { TransactionFilters, TransactionItem, TxService, TxStatus } from '@/api/types';
 import { Button } from '@/components/button';
 import { FilterChip } from '@/components/filter-chip';
@@ -46,7 +45,6 @@ const SERVICE_OPTIONS: { value: ServiceFilter; label: string }[] = [
 
 export default function HistoryScreen() {
   const colors = useColors();
-  const { signOut } = useSession();
   const [search, setSearch] = useState('');
   const [q, setQ] = useState('');
   const [status, setStatus] = useState<StatusFilter>('all');
@@ -128,13 +126,13 @@ export default function HistoryScreen() {
     <ErrorState
       error={query.error}
       onRetry={() => void query.refetch()}
-      onSignedOut={() => void signOut()}
     />
   ) : filtered ? (
     <NoSearchResultsState
       query={q}
       onClear={() => {
         setSearch('');
+        setQ('');
         setStatus('all');
         setService('all');
       }}

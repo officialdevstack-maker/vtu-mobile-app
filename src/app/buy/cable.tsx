@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { buyCable, getBalance, getCableCatalog, getMe, verifySmartcard } from '@/api/endpoints';
@@ -14,9 +14,11 @@ import { PlanRow } from '@/components/plan-row';
 import { PurchaseConfirm } from '@/components/purchase-confirm';
 import { PurchaseResultCard } from '@/components/purchase-result';
 import { SummaryRow } from '@/components/summary-row';
+import { EmptyState, ErrorState, LoadingState } from '@/components/states';
 import { TextField } from '@/components/text-field';
 import { MaxContentWidth } from '@/constants/theme';
 import { usePurchaseFlow } from '@/hooks/use-purchase-flow';
+import { useSlowLoading } from '@/hooks/use-slow-loading';
 import { formatNaira, groupPhone, isValidPhone, normalizePhone } from '@/lib/format';
 import { fontSize, useColors } from '@/theme';
 
@@ -36,6 +38,7 @@ export default function BuyCableScreen() {
   const [verifyError, setVerifyError] = useState<string | null>(null);
 
   const catalog = useQuery({ queryKey: ['catalog', 'cable'], queryFn: getCableCatalog });
+  const slow = useSlowLoading(catalog.isLoading);
   const me = useQuery({ queryKey: ['me'], queryFn: getMe });
   const balance = useQuery({ queryKey: ['balance'], queryFn: getBalance });
   const verify = useMutation({
@@ -114,15 +117,17 @@ export default function BuyCableScreen() {
 
   let body;
   if (catalog.isLoading) {
-    body = <ActivityIndicator color={colors.text} style={styles.state} />;
+    body = <LoadingState slow={slow} />;
   } else if (catalog.isError || !catalog.data || !operator) {
-    body = (
-      <View style={[styles.state, styles.gap]}>
-        <Text accessibilityRole="alert" style={[styles.error, { color: colors.danger }]}>
-          {catalog.isError ? errorMessage(catalog.error) : 'Cable TV is not available right now.'}
-        </Text>
-        <Button label="Try again" variant="secondary" onPress={() => void catalog.refetch()} />
-      </View>
+    body = catalog.isError ? (
+      <ErrorState error={catalog.error} onRetry={() => void catalog.refetch()} />
+    ) : (
+      <EmptyState
+        title="Cable TV is unavailable"
+        message="Cable TV is not available right now."
+        actionLabel="Try again"
+        onAction={() => void catalog.refetch()}
+      />
     );
   } else if (flow.result && plan) {
     body = (

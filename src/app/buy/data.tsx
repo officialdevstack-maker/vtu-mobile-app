@@ -2,11 +2,10 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { buyData, getBalance, getDataCatalog, getMe } from '@/api/endpoints';
-import { errorMessage } from '@/api/errors';
 import type { DataPurchase } from '@/api/types';
 import { Button } from '@/components/button';
 import { FilterChip } from '@/components/filter-chip';
@@ -16,7 +15,9 @@ import { PurchaseResultCard } from '@/components/purchase-result';
 import { SummaryRow } from '@/components/summary-row';
 import { TextField } from '@/components/text-field';
 import { MaxContentWidth } from '@/constants/theme';
+import { EmptyState, ErrorState, LoadingState } from '@/components/states';
 import { usePurchaseFlow } from '@/hooks/use-purchase-flow';
+import { useSlowLoading } from '@/hooks/use-slow-loading';
 import { formatNaira, groupPhone, isValidPhone, normalizePhone } from '@/lib/format';
 import { fontSize, useColors } from '@/theme';
 
@@ -32,6 +33,7 @@ export default function BuyDataScreen() {
   const [cashbackChoice, setCashbackChoice] = useState<boolean | null>(null);
 
   const catalog = useQuery({ queryKey: ['catalog', 'data'], queryFn: getDataCatalog });
+  const slow = useSlowLoading(catalog.isLoading);
   const me = useQuery({ queryKey: ['me'], queryFn: getMe });
   const balance = useQuery({ queryKey: ['balance'], queryFn: getBalance });
 
@@ -80,15 +82,17 @@ export default function BuyDataScreen() {
 
   let body;
   if (catalog.isLoading) {
-    body = <ActivityIndicator color={colors.text} style={styles.state} />;
+    body = <LoadingState slow={slow} />;
   } else if (catalog.isError || !catalog.data || !network) {
-    body = (
-      <View style={[styles.state, styles.gap]}>
-        <Text accessibilityRole="alert" style={[styles.error, { color: colors.danger }]}>
-          {catalog.isError ? errorMessage(catalog.error) : 'Data plans are not available right now.'}
-        </Text>
-        <Button label="Try again" variant="secondary" onPress={() => void catalog.refetch()} />
-      </View>
+    body = catalog.isError ? (
+      <ErrorState error={catalog.error} onRetry={() => void catalog.refetch()} />
+    ) : (
+      <EmptyState
+        title="No data plans"
+        message="Data plans are not available right now."
+        actionLabel="Try again"
+        onAction={() => void catalog.refetch()}
+      />
     );
   } else if (flow.result && plan) {
     body = (

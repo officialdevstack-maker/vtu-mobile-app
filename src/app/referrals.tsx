@@ -3,12 +3,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Clipboard from 'expo-clipboard';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { applyReferralCode, getReferrals } from '@/api/account';
 import { errorMessage } from '@/api/errors';
 import { Button } from '@/components/button';
+import { ErrorState, LoadingState } from '@/components/states';
 import { TextField } from '@/components/text-field';
 import { MaxContentWidth } from '@/constants/theme';
 import { formatNaira } from '@/lib/format';
@@ -52,14 +53,9 @@ export default function ReferralsScreen() {
 
   let body;
   if (query.isLoading) {
-    body = <ActivityIndicator color={colors.text} style={styles.state} />;
+    body = <LoadingState />;
   } else if (query.isError || !data) {
-    body = (
-      <View style={[styles.state, styles.gap]}>
-        <Text accessibilityRole="alert" style={[styles.error, { color: colors.danger }]}>{errorMessage(query.error)}</Text>
-        <Button label="Try again" variant="secondary" onPress={() => void query.refetch()} />
-      </View>
-    );
+    body = <ErrorState error={query.error} onRetry={() => void query.refetch()} />;
   } else {
     body = (
       <>

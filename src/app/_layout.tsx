@@ -6,17 +6,21 @@ import { View, useColorScheme } from 'react-native';
 
 import { NetworkBanner } from '@/components/network-banner';
 import { SplashOverlay } from '@/components/splash-overlay';
+import { StateView } from '@/components/state-view';
+import { AppGate } from '@/components/app-gate';
 import { SessionProvider, useSession } from '@/auth/session';
 import { queryClient } from '@/api/query-client';
+import { usePendingReconciler } from '@/hooks/use-pending-reconciler';
 import { loadOnboarding, useOnboarding } from '@/onboarding/store';
 import { useColors } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();
 
 function RootNavigator() {
-  const { isLoading, isSignedIn } = useSession();
+  const { isLoading, isSignedIn, isMockMode } = useSession();
   const onboarding = useOnboarding();
   const colors = useColors();
+  const pendingRecovery = usePendingReconciler(isSignedIn && !isMockMode);
 
   useEffect(() => {
     void loadOnboarding();
@@ -36,6 +40,19 @@ function RootNavigator() {
   return (
     <View style={{ flex: 1 }}>
       <NetworkBanner />
+      {pendingRecovery.hasError ? (
+        <StateView
+          compact
+          alert
+          tone="danger"
+          icon={{ ios: 'clock.badge.exclamationmark', android: 'error', web: 'error' }}
+          title="Purchase status unavailable"
+          message="We couldn't check the status of an unfinished purchase. Check your connection and try again."
+          actionLabel="Check again"
+          onAction={() => void pendingRecovery.refetch()}
+          actionLoading={pendingRecovery.isFetching}
+        />
+      ) : null}
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Protected guard={isSignedIn}>
           <Stack.Screen name="(tabs)" />
@@ -70,7 +87,9 @@ export default function RootLayout() {
       <SessionProvider>
         <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
           <SplashOverlay />
-          <RootNavigator />
+          <AppGate>
+            <RootNavigator />
+          </AppGate>
         </ThemeProvider>
       </SessionProvider>
     </QueryClientProvider>

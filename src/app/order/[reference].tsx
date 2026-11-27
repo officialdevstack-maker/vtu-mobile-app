@@ -4,7 +4,6 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useEffect, useState, type ReactNode } from 'react';
 import {
-  ActivityIndicator,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -22,10 +21,12 @@ import { shareReceipt } from '@/api/receipts';
 import type { TxService, TxStatus } from '@/api/types';
 import { Button } from '@/components/button';
 import { STATUS_LABEL } from '@/components/order-row';
+import { EmptyState, ErrorState, LoadingState } from '@/components/states';
 import { MaxContentWidth } from '@/constants/theme';
 import { findCachedTransaction } from '@/lib/find-transaction';
 import { formatLagosDate, formatNaira } from '@/lib/format';
 import { SERVICE_ICON } from '@/lib/service-icons';
+import { useSlowLoading } from '@/hooks/use-slow-loading';
 import { MIN_TOUCH, fontSize, radius, useColors } from '@/theme';
 
 const POLL_MS = 5_000;
@@ -112,6 +113,7 @@ export default function OrderScreen() {
       query.state.data?.status === 'pending' && !pollExpired ? POLL_MS : false,
   });
 
+  const slow = useSlowLoading(recent.isLoading || lookup.isLoading);
   const liveStatus: TxStatus | undefined = lookup.data?.status ?? item?.status;
   const settled = lookup.data?.status;
   const listed = item?.status;
@@ -157,23 +159,17 @@ export default function OrderScreen() {
   if (!liveStatus) {
     const loading = recent.isLoading || lookup.isLoading;
     body = loading ? (
-      <ActivityIndicator color={colors.text} style={styles.state} />
+      <LoadingState slow={slow} />
+    ) : lookup.isError || recent.isError ? (
+      <ErrorState
+        error={lookup.error ?? recent.error}
+        onRetry={() => {
+          void recent.refetch();
+          if (canLookup) void lookup.refetch();
+        }}
+      />
     ) : (
-      <View style={[styles.state, styles.gap]}>
-        <Text accessibilityRole="alert" style={[styles.error, styles.center, { color: colors.danger }]}>
-          {lookup.isError || recent.isError
-            ? errorMessage(lookup.error ?? recent.error)
-            : 'We could not find this order.'}
-        </Text>
-        <Button
-          label="Try again"
-          variant="secondary"
-          onPress={() => {
-            void recent.refetch();
-            if (canLookup) void lookup.refetch();
-          }}
-        />
-      </View>
+      <EmptyState title="Order not found" message="We could not find this order." />
     );
   } else {
     const tint =

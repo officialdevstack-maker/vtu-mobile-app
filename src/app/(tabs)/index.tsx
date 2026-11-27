@@ -22,9 +22,11 @@ import type { TxStatus } from '@/api/types';
 import { useSession } from '@/auth/session';
 import { Button } from '@/components/button';
 import { OrderRow } from '@/components/order-row';
+import { EmptyState, ErrorState, LoadingState } from '@/components/states';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { formatNaira } from '@/lib/format';
 import { SERVICE_ICON } from '@/lib/service-icons';
+import { useSlowLoading } from '@/hooks/use-slow-loading';
 import { fontSize, useColors } from '@/theme';
 
 const SERVICES = [
@@ -103,6 +105,7 @@ export default function HomeScreen() {
     queryFn: () => getTransactions({ page: 1 }),
     enabled: isSignedIn,
   });
+  const recentSlow = useSlowLoading(recent.isLoading);
 
   if (sessionLoading) {
     return <View style={[styles.fill, { backgroundColor: colors.background }]} />;
@@ -455,25 +458,11 @@ export default function HomeScreen() {
           </View>
 
           {recent.isLoading ? (
-            <ActivityIndicator color={colors.text} />
+            <LoadingState compact slow={recentSlow} />
           ) : recent.isError ? (
-            <View style={styles.gap}>
-              <Text accessibilityRole="alert" style={[styles.error, { color: colors.danger }]}>
-                {errorMessage(recent.error)}
-              </Text>
-              <Button label="Retry" variant="secondary" onPress={() => void recent.refetch()} />
-            </View>
+            <ErrorState compact error={recent.error} onRetry={() => void recent.refetch()} />
           ) : items.length === 0 ? (
-            <View style={[styles.empty, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <SymbolView
-                tintColor={colors.textSecondary}
-                name={{ ios: 'tray.fill', android: 'inbox', web: 'inbox' }}
-                size={22}
-              />
-              <Text style={[styles.body, { color: colors.textSecondary }]}>
-                No orders yet. Your purchases will show up here.
-              </Text>
-            </View>
+            <EmptyState compact title="No orders yet" message="Your purchases will show up here." />
           ) : (
             <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               {items.slice(0, 5).map((item, index) => (

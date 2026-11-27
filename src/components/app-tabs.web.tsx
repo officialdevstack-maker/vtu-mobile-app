@@ -1,11 +1,9 @@
 import { TabList, TabSlot, TabTrigger, Tabs } from 'expo-router/ui';
 import type { TabListProps, TabTriggerSlotProps } from 'expo-router/ui';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { MaxContentWidth, Spacing } from '@/constants/theme';
-
-import { ThemedText } from './themed-text';
-import { ThemedView } from './themed-view';
+import { fontSize, useColors } from '@/theme';
 
 export default function AppTabs() {
   return (
@@ -35,25 +33,24 @@ export default function AppTabs() {
 }
 
 export function TabButton({ children, isFocused }: TabTriggerSlotProps) {
+  const colors = useColors();
   return (
     <View style={styles.tabButtonView}>
-      <ThemedText type="small" themeColor={isFocused ? 'text' : 'textSecondary'}>
+      <Text style={[styles.tabText, { color: isFocused ? colors.text : colors.textSecondary }]}>
         {children}
-      </ThemedText>
+      </Text>
     </View>
   );
 }
 
 export function CustomTabList(props: TabListProps) {
+  const colors = useColors();
   return (
     <View {...props} style={styles.tabListContainer}>
-      <ThemedView type="backgroundElement" style={styles.innerContainer}>
-        <ThemedText type="smallBold" style={styles.brandText}>
-          Spur VTU
-        </ThemedText>
-
+      <View style={[styles.innerContainer, { backgroundColor: colors.surface }]}>
+        <Text style={[styles.brandText, { color: colors.text }]}>Spur VTU</Text>
         {props.children}
-      </ThemedView>
+      </View>
     </View>
   );
 }
@@ -77,12 +74,11 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
     maxWidth: MaxContentWidth,
   },
-  brandText: {
-    marginRight: 'auto',
-  },
+  brandText: { marginRight: 'auto', fontSize: fontSize.base, fontWeight: '700' },
   tabButtonView: {
     paddingVertical: Spacing.one,
     paddingHorizontal: Spacing.three,
     borderRadius: Spacing.three,
   },
+  tabText: { fontSize: fontSize.base, fontWeight: '600' },
 });

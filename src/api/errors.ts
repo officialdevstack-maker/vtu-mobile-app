@@ -4,6 +4,7 @@ export type ApiErrorCode =
   | 'invalid_request'
   | 'unauthorized'
   | 'account_suspended'
+  | 'forbidden'
   | 'pin_required'
   | 'not_found'
   | 'purchase_failed'
@@ -41,6 +42,13 @@ export function isOutcomeUnknown(error: unknown): boolean {
     isApiError(error) &&
     (error.code === 'network_error' || error.code === 'timeout' || error.status >= 500)
   );
+}
+
+// Confirm this code with the web API before relying on the override in production.
+export const NETWORK_MISMATCH_CODE = 'network_mismatch';
+
+export function isNetworkMismatch(error: unknown): boolean {
+  return isApiError(error) && error.code === NETWORK_MISMATCH_CODE;
 }
 
 export function errorMessage(error: unknown): string {

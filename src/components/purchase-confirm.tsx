@@ -152,6 +152,20 @@ export function PurchaseConfirm({
               {errorMessage(flow.payError)}
             </Text>
           ) : null}
+          {flow.networkMismatch ? (
+            <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Text style={[styles.body, { color: colors.text }]}>
+                If this number was moved to another network, you can buy anyway. Check the number
+                carefully before you continue.
+              </Text>
+              <Button
+                label="Buy anyway"
+                variant="secondary"
+                onPress={flow.overrideNetworkCheck}
+                disabled={flow.isPaying}
+              />
+            </View>
+          ) : null}
           <Button
             label={payLabel}
             onPress={onPay}

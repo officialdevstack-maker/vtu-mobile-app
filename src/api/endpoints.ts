@@ -22,6 +22,7 @@ import { isMockMode } from './mock-mode';
 import type {
   AirtimeCatalog,
   AirtimePurchase,
+  AppConfig,
   Balance,
   CableCatalog,
   CablePurchase,
@@ -53,6 +54,14 @@ export function isLookupReference(reference: string): boolean {
 
 export const getBalance = () =>
   isMockMode ? Promise.resolve(mockBalance) : api.get<Balance>('/balance');
+export const getConfig = () =>
+  isMockMode
+    ? Promise.resolve<AppConfig>({
+        minimumVersion: null,
+        maintenance: false,
+        maintenanceMessage: null,
+      })
+    : api.get<AppConfig>('/config');
 export const getMe = () => (isMockMode ? Promise.resolve(mockMe) : api.get<Me>('/me'));
 export const getNotifications = () =>
   isMockMode

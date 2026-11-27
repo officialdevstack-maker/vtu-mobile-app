@@ -8,6 +8,7 @@ import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { NoSearchResultsState } from '@/components/states';
 import { SERVICE_ICON } from '@/lib/service-icons';
 import { MIN_TOUCH, fontSize, radius, useColors } from '@/theme';
 
@@ -181,16 +182,7 @@ export default function ServicesScreen() {
           </View>
 
           {visible.length === 0 ? (
-            <View style={styles.empty}>
-              <SymbolView
-                tintColor={colors.textSecondary}
-                name={{ ios: 'magnifyingglass', android: 'search', web: 'search' }}
-                size={22}
-              />
-              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-                No service matches &quot;{search.trim()}&quot;.
-              </Text>
-            </View>
+            <NoSearchResultsState compact query={search} onClear={() => setSearch('')} />
           ) : (
             visible.map((section) => (
               <View key={section.title} style={styles.section}>

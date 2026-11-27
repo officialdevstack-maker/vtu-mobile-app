@@ -9,6 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { createSupportTicket, isLookupReference } from '@/api/endpoints';
 import { errorMessage } from '@/api/errors';
 import { Button } from '@/components/button';
+import { SuccessState } from '@/components/states';
 import { TextField } from '@/components/text-field';
 import { MaxContentWidth } from '@/constants/theme';
 import { useColors } from '@/theme';
@@ -38,13 +39,11 @@ export default function HelpScreen() {
     return (
       <SafeAreaView edges={['bottom']} style={[styles.screen, { backgroundColor: colors.background }]}>
         <View style={styles.centered}>
-          <Text accessibilityRole="header" style={[styles.title, { color: colors.text }]}>
-            Message sent
-          </Text>
-          <Text style={[styles.body, { color: colors.textSecondary }]}>
-            Our team has your request and will reply. Ticket reference: {ticket.data.id}
-          </Text>
-          <Button label="Done" onPress={() => router.back()} />
+          <SuccessState
+            title="Message sent"
+            message={`Our team has your request and will reply. Ticket reference: ${ticket.data.id}`}
+            onAction={() => router.back()}
+          />
         </View>
       </SafeAreaView>
     );

@@ -1,14 +1,14 @@
 // src/app/cashback.tsx
 
 import { useQuery } from '@tanstack/react-query';
-import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getCashback, type CashbackEntry } from '@/api/account';
-import { errorMessage } from '@/api/errors';
-import { Button } from '@/components/button';
+import { EmptyState, ErrorState, LoadingState } from '@/components/states';
 import { MaxContentWidth } from '@/constants/theme';
 import { formatLagosDate, formatNaira } from '@/lib/format';
+import { useSlowLoading } from '@/hooks/use-slow-loading';
 import { radius, useColors } from '@/theme';
 
 function entryTitle(entry: CashbackEntry): string {
@@ -19,6 +19,7 @@ function entryTitle(entry: CashbackEntry): string {
 export default function CashbackScreen() {
   const colors = useColors();
   const query = useQuery({ queryKey: ['cashback'], queryFn: getCashback });
+  const slow = useSlowLoading(query.isLoading);
   const data = query.data;
   const header = data ? (
     <View style={styles.header}>
@@ -31,14 +32,11 @@ export default function CashbackScreen() {
     </View>
   ) : undefined;
   const empty = query.isLoading ? (
-    <ActivityIndicator color={colors.text} style={styles.state} />
+    <LoadingState slow={slow} />
   ) : query.isError ? (
-    <View style={[styles.state, styles.gap]}>
-      <Text accessibilityRole="alert" style={[styles.error, { color: colors.danger }]}>{errorMessage(query.error)}</Text>
-      <Button label="Retry" variant="secondary" onPress={() => void query.refetch()} />
-    </View>
+    <ErrorState error={query.error} onRetry={() => void query.refetch()} />
   ) : (
-    <Text style={[styles.note, styles.center, styles.state, { color: colors.textSecondary }]}>No cashback activity yet.</Text>
+    <EmptyState title="No cashback yet" message="Cashback you earn on purchases will show up here." />
   );
 
   return (

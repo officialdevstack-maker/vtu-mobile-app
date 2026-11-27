@@ -2,11 +2,10 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { buyAirtime, getAirtimeCatalog, getBalance, getMe } from '@/api/endpoints';
-import { errorMessage } from '@/api/errors';
 import type { AirtimePurchase } from '@/api/types';
 import { AmountTile } from '@/components/amount-tile';
 import { Button } from '@/components/button';
@@ -16,7 +15,9 @@ import { PurchaseResultCard } from '@/components/purchase-result';
 import { SummaryRow } from '@/components/summary-row';
 import { TextField } from '@/components/text-field';
 import { MaxContentWidth } from '@/constants/theme';
+import { EmptyState, ErrorState, LoadingState } from '@/components/states';
 import { usePurchaseFlow } from '@/hooks/use-purchase-flow';
+import { useSlowLoading } from '@/hooks/use-slow-loading';
 import {
   airtimeDisplayPrice,
   formatNaira,
@@ -41,6 +42,7 @@ export default function BuyAirtimeScreen() {
   const [cashbackChoice, setCashbackChoice] = useState<boolean | null>(null);
 
   const catalog = useQuery({ queryKey: ['catalog', 'airtime'], queryFn: getAirtimeCatalog });
+  const slow = useSlowLoading(catalog.isLoading);
   const me = useQuery({ queryKey: ['me'], queryFn: getMe });
   const balance = useQuery({ queryKey: ['balance'], queryFn: getBalance });
 
@@ -98,15 +100,17 @@ export default function BuyAirtimeScreen() {
 
   let body;
   if (catalog.isLoading) {
-    body = <ActivityIndicator color={colors.text} style={styles.state} />;
+    body = <LoadingState slow={slow} />;
   } else if (catalog.isError || !catalog.data || !network || !type) {
-    body = (
-      <View style={[styles.state, styles.gap]}>
-        <Text accessibilityRole="alert" style={[styles.error, { color: colors.danger }]}>
-          {catalog.isError ? errorMessage(catalog.error) : 'Airtime is not available right now.'}
-        </Text>
-        <Button label="Try again" variant="secondary" onPress={() => void catalog.refetch()} />
-      </View>
+    body = catalog.isError ? (
+      <ErrorState error={catalog.error} onRetry={() => void catalog.refetch()} />
+    ) : (
+      <EmptyState
+        title="Airtime is unavailable"
+        message="Airtime is not available right now."
+        actionLabel="Try again"
+        onAction={() => void catalog.refetch()}
+      />
     );
   } else if (flow.result) {
     body = (

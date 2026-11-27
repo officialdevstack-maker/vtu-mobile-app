@@ -6,7 +6,6 @@ import { router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   Pressable,
   RefreshControl,
@@ -23,6 +22,7 @@ import { errorMessage } from '@/api/errors';
 import { useSession } from '@/auth/session';
 import { Button } from '@/components/button';
 import { MenuRow } from '@/components/menu-row';
+import { ErrorState, LoadingState } from '@/components/states';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { formatNaira } from '@/lib/format';
 import { SERVICE_ICON } from '@/lib/service-icons';
@@ -77,14 +77,9 @@ export default function MeScreen() {
         }>
         <View style={styles.content}>
           {me.isLoading ? (
-            <ActivityIndicator color={colors.text} style={styles.state} />
+            <LoadingState />
           ) : me.isError || !profile ? (
-            <View style={styles.gap}>
-              <Text accessibilityRole="alert" style={[styles.error, { color: colors.danger }]}>
-                {errorMessage(me.error)}
-              </Text>
-              <Button label="Retry" variant="secondary" onPress={() => void me.refetch()} />
-            </View>
+            <ErrorState error={me.error} onRetry={() => void me.refetch()} />
           ) : (
             <>
               <View
