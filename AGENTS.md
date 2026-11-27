@@ -80,11 +80,14 @@ EXPO_PUBLIC_API_URL=
 EXPO_PUBLIC_SPURS_ISSUER=
 EXPO_PUBLIC_SPURS_CLIENT_ID=
 EXPO_PUBLIC_SPURS_REDIRECT_URI=vtuapp://redirect
+EXPO_PUBLIC_SENTRY_DSN=
+SENTRY_ORG=
+SENTRY_PROJECT=
 EXPO_PUBLIC_IOS_STORE_URL=
 EXPO_PUBLIC_ANDROID_STORE_URL=
 ```
 
-Expo public variables are bundled into the app. Never put secrets here. Release values live in EAS environments. `EXPO_PUBLIC_SPURS_CLIENT_ID` must also be listed in the web app's `SPURS_MOBILE_CLIENT_IDS`, otherwise every call returns 401.
+Expo public variables are bundled into the app. Never put secrets here. Release values live in EAS environments. Set `SENTRY_AUTH_TOKEN` as a sensitive EAS environment variable for source map uploads; never commit it. `EXPO_PUBLIC_SPURS_CLIENT_ID` must also be listed in the web app's `SPURS_MOBILE_CLIENT_IDS`, otherwise every call returns 401.
 
 ## Auth
 

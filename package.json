@@ -4,6 +4,7 @@
   "main": "expo-router/entry",
   "dependencies": {
     "@react-native-community/netinfo": "12.0.1",
+    "@sentry/react-native": "~8.28.1",
     "@tanstack/react-query": "^5.108.4",
     "expo": "~58.1.0",
     "expo-auth-session": "~58.0.20",

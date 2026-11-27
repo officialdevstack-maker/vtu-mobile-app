@@ -1,4 +1,5 @@
 import { QueryClientProvider } from '@tanstack/react-query';
+import * as Sentry from '@sentry/react-native';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
@@ -13,6 +14,30 @@ import { queryClient } from '@/api/query-client';
 import { usePendingReconciler } from '@/hooks/use-pending-reconciler';
 import { loadOnboarding, useOnboarding } from '@/onboarding/store';
 import { useColors } from '@/theme';
+
+const sentryDsn = process.env.EXPO_PUBLIC_SENTRY_DSN;
+
+if (sentryDsn) {
+  Sentry.init({
+    dsn: sentryDsn,
+    sendDefaultPii: false,
+    tracesSampleRate: 0,
+    maxBreadcrumbs: 0,
+    beforeSend(event) {
+      event.user = undefined;
+      event.request = undefined;
+      event.breadcrumbs = undefined;
+      event.extra = undefined;
+      event.message = undefined;
+      event.logentry = undefined;
+      event.transaction = undefined;
+      for (const exception of event.exception?.values ?? []) {
+        exception.value = undefined;
+      }
+      return event;
+    },
+  });
+}
 
 SplashScreen.preventAutoHideAsync();
 
@@ -80,7 +105,7 @@ function RootNavigator() {
   );
 }
 
-export default function RootLayout() {
+function RootLayout() {
   const colorScheme = useColorScheme();
 
   return (
@@ -96,3 +121,5 @@ export default function RootLayout() {
     </QueryClientProvider>
   );
 }
+
+export default Sentry.wrap(RootLayout);
