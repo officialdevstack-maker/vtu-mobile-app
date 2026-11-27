@@ -6,12 +6,15 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { fontSize, useColors } from '@/theme';
 
+export type MenuTone = 'primary' | 'success' | 'neutral' | 'danger';
+
 type MenuRowProps = {
   label: string;
   onPress: () => void;
   icon: ComponentProps<typeof SymbolView>['name'];
   subtitle?: string;
   value?: string;
+  tone?: MenuTone;
   danger?: boolean;
   first?: boolean;
   accessibilityLabel?: string;
@@ -23,12 +26,20 @@ export function MenuRow({
   icon,
   subtitle,
   value,
+  tone = 'primary',
   danger = false,
   first = false,
   accessibilityLabel,
 }: MenuRowProps) {
   const colors = useColors();
-  const textColor = danger ? colors.danger : colors.text;
+  const resolved: MenuTone = danger ? 'danger' : tone;
+
+  const tile = {
+    primary: { bg: colors.primary, fg: colors.onPrimary },
+    success: { bg: `${colors.success}26`, fg: colors.success },
+    neutral: { bg: colors.background, fg: colors.text },
+    danger: { bg: `${colors.danger}1F`, fg: colors.danger },
+  }[resolved];
 
   return (
     <Pressable
@@ -40,18 +51,18 @@ export function MenuRow({
         !first && { borderTopColor: colors.border, borderTopWidth: StyleSheet.hairlineWidth },
         pressed && styles.pressed,
       ]}>
-      <View style={[styles.icon, { backgroundColor: danger ? `${colors.danger}1F` : colors.primary }]}>
-        <SymbolView tintColor={danger ? colors.danger : colors.onPrimary} name={icon} size={18} />
+      <View style={[styles.icon, { backgroundColor: tile.bg }]}>
+        <SymbolView tintColor={tile.fg} name={icon} size={16} />
       </View>
       <View style={styles.text}>
-        <Text style={[styles.label, { color: textColor }]}>{label}</Text>
+        <Text style={[styles.label, { color: danger ? colors.danger : colors.text }]}>{label}</Text>
         {subtitle ? <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{subtitle}</Text> : null}
       </View>
       {value ? <Text style={[styles.value, { color: colors.textSecondary }]}>{value}</Text> : null}
       <SymbolView
         tintColor={colors.textSecondary}
         name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }}
-        size={12}
+        size={11}
       />
     </Pressable>
   );
