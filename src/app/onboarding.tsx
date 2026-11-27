@@ -1,4 +1,4 @@
-import { SymbolView } from 'expo-symbols';
+import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { useRef, useState } from 'react';
 import {
   Pressable,
@@ -9,6 +9,7 @@ import {
   View,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
+  type ScrollViewInstance,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -21,7 +22,7 @@ import { fontSize, MIN_TOUCH, useColors } from '@/theme';
 type Slide = {
   title: string;
   body: string;
-  icon: { ios: string; android: string; web: string };
+  icon: SymbolViewProps['name'];
 };
 
 const SLIDES: readonly Slide[] = [
@@ -46,7 +47,7 @@ export default function OnboardingScreen() {
   const colors = useColors();
   const onboarding = useOnboarding();
   const { width } = useWindowDimensions();
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<ScrollViewInstance>(null);
   const [index, setIndex] = useState(0);
   const [saving, setSaving] = useState(false);
   const [retrying, setRetrying] = useState(false);
