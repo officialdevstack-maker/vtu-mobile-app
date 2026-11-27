@@ -15,6 +15,7 @@ import {
 import { configureApiClient } from '@/api/client';
 import { queryClient } from '@/api/query-client';
 import { reportError } from '@/lib/report-error';
+import { SPURS_CLIENT_ID, SPURS_ISSUER } from './config';
 import { clearTokens, loadTokens, saveTokens } from './storage';
 
 type SessionContextValue = {
@@ -76,18 +77,27 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       getAccessToken: () => Promise.resolve(tokens.current.access),
       refresh: async () => {
         const refreshToken = tokens.current.refresh;
-        if (!refreshToken) return null;
-        const issuer = process.env.EXPO_PUBLIC_SPURS_ISSUER;
-        if (!issuer) return null;
-        const discovery = await AuthSession.fetchDiscoveryAsync(issuer);
+        if (!refreshToken) {
+          reportError({ source: 'auth.no_refresh_token' });
+          return null;
+        }
+        if (!SPURS_CLIENT_ID) {
+          reportError({ source: 'auth.client_id_missing' });
+          return null;
+        }
+        const discovery = await AuthSession.fetchDiscoveryAsync(SPURS_ISSUER);
         if (!discovery.tokenEndpoint) return null;
-        const clientId = process.env.EXPO_PUBLIC_SPURS_CLIENT_ID;
-        if (!clientId) return null;
         let response: AuthSession.TokenResponse;
         try {
-          response = await AuthSession.refreshAsync({ clientId, refreshToken }, discovery);
+          response = await AuthSession.refreshAsync(
+            { clientId: SPURS_CLIENT_ID, refreshToken },
+            discovery,
+          );
         } catch (error) {
-          if (error instanceof AuthSession.TokenError) return null;
+          if (error instanceof AuthSession.TokenError) {
+            reportError({ source: 'auth.refresh_rejected' });
+            return null;
+          }
           throw error;
         }
         if (!response.accessToken) return null;

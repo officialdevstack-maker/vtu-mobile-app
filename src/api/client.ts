@@ -3,6 +3,7 @@
 import { ApiError } from './errors';
 import type { ApiResponse } from './types';
 import { reportError } from '@/lib/report-error';
+import { summarizeToken } from '@/lib/token-claims';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL?.trim().replace(/\/+$/, '');
 const BASE_URL = API_URL ? `${API_URL}/api/v1` : null;
@@ -57,6 +58,36 @@ function buildQuery(params?: Record<string, string | number | undefined>): strin
   }
   const text = search.toString();
   return text ? `?${text}` : '';
+}
+
+let reported401 = false;
+
+async function reportUnauthorized(response: Response, token: string | null, path: string) {
+  if (reported401) return;
+  reported401 = true;
+  let serverMessage = 'unreadable';
+  try {
+    const body = (await response.clone().json()) as { error?: { message?: string } };
+    serverMessage = String(body.error?.message ?? 'none').slice(0, 150);
+  } catch {
+    // Keep the default when the response body isn't readable JSON.
+  }
+  const summary = summarizeToken(token);
+  reportError({
+    source: 'auth.unauthorized',
+    tags: {
+      'auth.endpoint': path.split('/')[1] ?? 'unknown',
+      'auth.server_message': serverMessage,
+      'token.format': summary.format,
+      'token.iss': summary.iss,
+      'token.aud': summary.aud,
+      'token.client': summary.client,
+      'token.scope': summary.scope,
+      'token.lifetime_s': summary.lifetimeSeconds,
+      'token.expired': summary.expired,
+    },
+    fingerprint: ['auth-unauthorized', summary.format],
+  });
 }
 
 async function send(method: Method, url: string, token: string | null, body?: unknown) {
@@ -120,6 +151,7 @@ async function request<T>(
     let response = await send(method, url, token, options.body);
 
     if (response.status === 401 && handlers) {
+      void reportUnauthorized(response, token, path);
       const fresh = await refreshOnce();
       if (!fresh) {
         handlers.onSignedOut();

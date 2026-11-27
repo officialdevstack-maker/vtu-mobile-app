@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { SPURS_CLIENT_ID, SPURS_ISSUER } from '@/auth/config';
 import { useSession } from '@/auth/session';
 import { Button } from '@/components/button';
 import { MaxContentWidth } from '@/constants/theme';
@@ -14,21 +15,16 @@ import { radius, useColors } from '@/theme';
 
 WebBrowser.maybeCompleteAuthSession();
 
-const issuer =
-  process.env.EXPO_PUBLIC_SPURS_ISSUER ??
-  'https://node-accounts-backend.onrender.com/api/oidc';
-const clientId = process.env.EXPO_PUBLIC_SPURS_CLIENT_ID ?? '';
-
 export default function LoginScreen() {
   const colors = useColors();
   const { isLoading, signIn } = useSession();
-  const discovery = AuthSession.useAutoDiscovery(issuer);
+  const discovery = AuthSession.useAutoDiscovery(SPURS_ISSUER);
   const redirectUri =
     process.env.EXPO_PUBLIC_SPURS_REDIRECT_URI ??
     AuthSession.makeRedirectUri({ scheme: 'vtuapp', path: 'redirect' });
   const [request, response, promptAsync] = AuthSession.useAuthRequest(
     {
-      clientId,
+      clientId: SPURS_CLIENT_ID,
       redirectUri,
       responseType: AuthSession.ResponseType.Code,
       scopes: ['openid', 'profile', 'email', 'offline_access'],
@@ -45,7 +41,7 @@ export default function LoginScreen() {
         const code = response.params.code;
         const token = await AuthSession.exchangeCodeAsync(
           {
-            clientId,
+            clientId: SPURS_CLIENT_ID,
             code,
             redirectUri,
             extraParams: request.codeVerifier
@@ -86,11 +82,11 @@ export default function LoginScreen() {
           <Button
             label="Continue with Spurs"
             onPress={() => void promptAsync()}
-            disabled={!request || !clientId}
+            disabled={!request || !SPURS_CLIENT_ID}
             loading={!request}
             accessibilityLabel="Sign in with Spurs"
           />
-          {!clientId ? (
+          {!SPURS_CLIENT_ID ? (
             <Text style={[styles.error, { color: colors.danger }]}>Mobile sign-in is not configured.</Text>
           ) : null}
         </View>
