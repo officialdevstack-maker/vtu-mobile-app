@@ -14,7 +14,8 @@
       "environment": "preview",
       "env": {
         "SENTRY_ORG": "spurs-devs",
-        "SENTRY_PROJECT": "spurs-vtu"
+        "SENTRY_PROJECT": "spurs-vtu",
+        "SENTRY_DNS": "https://e8589f854a23b31d7f1fab03b2f7d61e@o4509716805713920.ingest.de.sentry.io/4512504177950800"
       },
       "android": {
         "buildType": "apk"
@@ -24,6 +25,7 @@
       "autoIncrement": true,
       "environment": "production",
       "env": {
+        "SENTRY_DNS": "https://e8589f854a23b31d7f1fab03b2f7d61e@o4509716805713920.ingest.de.sentry.io/4512504177950800",
         "SENTRY_ORG": "spurs-devs",
         "SENTRY_PROJECT": "spurs-vtu"
       }

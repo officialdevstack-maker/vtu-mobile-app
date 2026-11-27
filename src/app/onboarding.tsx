@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/button';
 import { MaxContentWidth } from '@/constants/theme';
 import { SERVICE_ICON } from '@/lib/service-icons';
+import { reportError } from '@/lib/report-error';
 import { completeOnboarding, retryLoadOnboarding, useOnboarding } from '@/onboarding/store';
 import { fontSize, MIN_TOUCH, useColors } from '@/theme';
 
@@ -67,6 +68,7 @@ export default function OnboardingScreen() {
     try {
       await completeOnboarding();
     } catch {
+      reportError({ source: 'onboarding.save' });
       setSaveError("We couldn't save your progress. Please try again.");
       setSaving(false);
     }

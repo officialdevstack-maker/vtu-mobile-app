@@ -5,6 +5,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 
 import { configureApiClient } from '@/api/client';
 import { queryClient } from '@/api/query-client';
+import { reportError } from '@/lib/report-error';
 import { clearTokens, loadTokens, saveTokens } from './storage';
 
 type SessionContextValue = {
@@ -37,12 +38,20 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
-    void loadTokens().then((session) => {
-      if (!mounted) return;
-      setAccessToken(session?.accessToken ?? null);
-      setRefreshToken(session?.refreshToken ?? null);
-      setIsLoading(false);
-    });
+    void loadTokens()
+      .then((session) => {
+        if (!mounted) return;
+        setAccessToken(session?.accessToken ?? null);
+        setRefreshToken(session?.refreshToken ?? null);
+        setIsLoading(false);
+      })
+      .catch(() => {
+        reportError({ source: 'auth.session_restore' });
+        if (!mounted) return;
+        setAccessToken(null);
+        setRefreshToken(null);
+        setIsLoading(false);
+      });
     return () => {
       mounted = false;
     };

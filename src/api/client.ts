@@ -1,9 +1,8 @@
 // src/api/client.ts
 
-import * as Sentry from '@sentry/react-native';
-
 import { ApiError } from './errors';
 import type { ApiResponse } from './types';
+import { reportError } from '@/lib/report-error';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL?.trim().replace(/\/+$/, '');
 const BASE_URL = API_URL ? `${API_URL}/api/v1` : null;
@@ -41,18 +40,13 @@ function refreshOnce(): Promise<string | null> {
 type Method = 'GET' | 'POST' | 'DELETE';
 
 function reportApiFailure(error: unknown, method: Method): void {
-  Sentry.withScope((scope) => {
-    scope.setTag('error.source', 'api');
-    scope.setTag('api.method', method);
-    if (error instanceof ApiError) {
-      scope.setTag('api.status', String(error.status));
-      scope.setTag('api.error_code', error.code);
-      scope.setFingerprint(['api-request', method, error.code]);
-    } else {
-      scope.setFingerprint(['api-request', method, 'unexpected']);
-    }
-    Sentry.captureException(new Error('API request failed'));
-  });
+  const tags: Record<string, string> = { 'api.method': method };
+  const code = error instanceof ApiError ? error.code : 'unexpected';
+  if (error instanceof ApiError) {
+    tags['api.status'] = String(error.status);
+    tags['api.error_code'] = error.code;
+  }
+  reportError({ source: 'api', tags, fingerprint: ['api-request', method, code] });
 }
 
 function buildQuery(params?: Record<string, string | number | undefined>): string {

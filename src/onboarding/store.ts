@@ -2,6 +2,8 @@ import * as SecureStore from 'expo-secure-store';
 import { useSyncExternalStore } from 'react';
 import { Platform } from 'react-native';
 
+import { reportError } from '@/lib/report-error';
+
 const KEY = 'spur_onboarding_seen';
 
 export type OnboardingState = {
@@ -44,12 +46,14 @@ export function loadOnboarding(): Promise<void> {
     .then(() => SecureStore.getItemAsync(KEY))
     .then(
       (value) => setState({ loaded: true, seen: value === '1', error: null }),
-      () =>
+      () => {
+        reportError({ source: 'onboarding.load' });
         setState({
           loaded: true,
           seen: false,
           error: "We couldn't check whether you've seen this introduction before.",
-        }),
+        });
+      },
     )
     .finally(() => {
       loading = null;

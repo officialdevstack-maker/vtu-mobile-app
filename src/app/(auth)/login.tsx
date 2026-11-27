@@ -9,6 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSession } from '@/auth/session';
 import { Button } from '@/components/button';
 import { MaxContentWidth } from '@/constants/theme';
+import { reportError } from '@/lib/report-error';
 import { radius, useColors } from '@/theme';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -56,6 +57,7 @@ export default function LoginScreen() {
         if (!token.accessToken) throw new Error('Sign-in did not return an access token.');
         await signIn(token.accessToken, token.refreshToken);
       } catch (exchangeError) {
+        reportError({ source: 'auth.sign_in' });
         setError(exchangeError instanceof Error ? exchangeError.message : 'Sign-in failed.');
       }
     })();

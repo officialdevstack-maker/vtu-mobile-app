@@ -4,6 +4,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown, FadeOut, useReducedMotion } from 'react-native-reanimated';
 
 import { useSession } from '@/auth/session';
+import { reportError } from '@/lib/report-error';
 import { brand } from '@/theme';
 
 const MIN_VISIBLE_MS = 1_400;
@@ -27,8 +28,8 @@ export function SplashOverlay() {
       importantForAccessibility="no-hide-descendants"
       exiting={reduceMotion ? undefined : FadeOut.duration(FADE_OUT_MS)}
       onLayout={() => {
-        void SplashScreen.hideAsync().catch((error: unknown) => {
-          console.error('Unable to hide the native splash screen.', error);
+        void SplashScreen.hideAsync().catch(() => {
+          reportError({ source: 'splash.hide' });
         });
       }}
       style={styles.overlay}>

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 
 import { getTransactionStatus } from '@/api/endpoints';
 import { isApiError, isNetworkMismatch, isOutcomeUnknown } from '@/api/errors';
+import { reportError } from '@/lib/report-error';
 import type { PurchaseResult, TxStatus } from '@/api/types';
 import {
   addPending,
@@ -69,7 +70,10 @@ export function usePurchaseFlow<TBody extends PurchaseBody>(
   }
 
   function removeTrackedPurchase(ref: string, message: string) {
-    void removePending(ref).catch(() => setNotice(message));
+    void removePending(ref).catch(() => {
+      reportError({ source: 'purchase_tracking.remove' });
+      setNotice(message);
+    });
   }
 
   const buy = useMutation({
@@ -159,6 +163,7 @@ export function usePurchaseFlow<TBody extends PurchaseBody>(
       refresh();
       if (reference) {
         void removePending(reference).catch(() => {
+          reportError({ source: 'purchase_tracking.remove' });
           setNotice('The order status is known, but local purchase tracking could not be cleared.');
         });
       }
