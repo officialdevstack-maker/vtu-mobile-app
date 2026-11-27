@@ -14,12 +14,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getTransactions } from '@/api/endpoints';
 import { errorMessage } from '@/api/errors';
+import { useSession } from '@/auth/session';
 import type { TransactionFilters, TransactionItem, TxService, TxStatus } from '@/api/types';
 import { Button } from '@/components/button';
 import { FilterChip } from '@/components/filter-chip';
 import { OrderRow } from '@/components/order-row';
+import { EmptyState, ErrorState, LoadingState, NoSearchResultsState } from '@/components/states';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { groupByDay } from '@/lib/group-by-day';
+import { useSlowLoading } from '@/hooks/use-slow-loading';
 import { fontSize, MIN_TOUCH, radius, useColors } from '@/theme';
 
 type StatusFilter = TxStatus | 'all';
@@ -43,6 +46,7 @@ const SERVICE_OPTIONS: { value: ServiceFilter; label: string }[] = [
 
 export default function HistoryScreen() {
   const colors = useColors();
+  const { signOut } = useSession();
   const [search, setSearch] = useState('');
   const [q, setQ] = useState('');
   const [status, setStatus] = useState<StatusFilter>('all');
@@ -61,6 +65,7 @@ export default function HistoryScreen() {
     getNextPageParam: (last) =>
       last.page * last.pageSize < last.total ? last.page + 1 : undefined,
   });
+  const slow = useSlowLoading(query.isLoading);
 
   const pages = query.data?.pages;
   const sections = useMemo(() => {
@@ -116,21 +121,26 @@ export default function HistoryScreen() {
     </View>
   );
 
+  const filtered = q !== '' || status !== 'all' || service !== 'all';
   const empty = query.isLoading ? (
-    <ActivityIndicator color={colors.text} style={styles.state} />
+    <LoadingState slow={slow} />
   ) : query.isError ? (
-    <View style={[styles.state, styles.gap]}>
-      <Text accessibilityRole="alert" style={[styles.error, { color: colors.danger }]}>
-        {errorMessage(query.error)}
-      </Text>
-      <Button label="Retry" variant="secondary" onPress={() => void query.refetch()} />
-    </View>
+    <ErrorState
+      error={query.error}
+      onRetry={() => void query.refetch()}
+      onSignedOut={() => void signOut()}
+    />
+  ) : filtered ? (
+    <NoSearchResultsState
+      query={q}
+      onClear={() => {
+        setSearch('');
+        setStatus('all');
+        setService('all');
+      }}
+    />
   ) : (
-    <Text style={[styles.body, styles.state, { color: colors.textSecondary }]}>
-      {q || status !== 'all' || service !== 'all'
-        ? 'No orders match these filters.'
-        : 'No orders yet. Your purchases will show up here.'}
-    </Text>
+    <EmptyState title="No orders yet" message="Your purchases will show up here." />
   );
 
   return (

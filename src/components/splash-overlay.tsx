@@ -1,0 +1,69 @@
+import * as SplashScreen from 'expo-splash-screen';
+import { useEffect, useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeIn, FadeInDown, FadeOut } from 'react-native-reanimated';
+
+import { useSession } from '@/auth/session';
+import { brand } from '@/theme';
+
+const MIN_VISIBLE_MS = 1_400;
+const FADE_OUT_MS = 350;
+
+export function SplashOverlay() {
+  const { isLoading } = useSession();
+  const [minElapsed, setMinElapsed] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setMinElapsed(true), MIN_VISIBLE_MS);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (minElapsed && !isLoading) return null;
+
+  return (
+    <Animated.View
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      exiting={FadeOut.duration(FADE_OUT_MS)}
+      onLayout={() => {
+        void SplashScreen.hideAsync().catch((error: unknown) => {
+          console.error('Unable to hide the native splash screen.', error);
+        });
+      }}
+      style={styles.overlay}>
+      <View style={styles.center}>
+        <View style={styles.mark}>
+          <Text style={styles.markText}>S</Text>
+        </View>
+        <Animated.Text entering={FadeInDown.delay(100).duration(450)} style={styles.name}>
+          Spur VTU
+        </Animated.Text>
+        <Animated.Text entering={FadeIn.delay(350).duration(450)} style={styles.tagline}>
+          Airtime, data, cable TV and electricity
+        </Animated.Text>
+      </View>
+    </Animated.View>
+  );
+}
+
+const styles = StyleSheet.create({
+  overlay: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: brand.petrol,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+  },
+  center: { alignItems: 'center', gap: 12 },
+  mark: {
+    width: 76,
+    height: 76,
+    borderRadius: 22,
+    backgroundColor: brand.marigold,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  markText: { fontSize: 40, fontWeight: '700', color: brand.petrol },
+  name: { fontSize: 28, fontWeight: '700', color: brand.paper, marginTop: 4 },
+  tagline: { fontSize: 14, color: '#BCD0D4', textAlign: 'center', maxWidth: 260 },
+});
