@@ -1,10 +1,10 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  FlatList,
   RefreshControl,
   ScrollView,
+  SectionList,
   StyleSheet,
   Text,
   TextInput,
@@ -14,12 +14,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getTransactions } from '@/api/endpoints';
 import { errorMessage } from '@/api/errors';
-import type { TransactionFilters, TxService, TxStatus } from '@/api/types';
+import type { TransactionFilters, TransactionItem, TxService, TxStatus } from '@/api/types';
 import { Button } from '@/components/button';
 import { FilterChip } from '@/components/filter-chip';
 import { OrderRow } from '@/components/order-row';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-import { MIN_TOUCH, radius, useColors } from '@/theme';
+import { groupByDay } from '@/lib/group-by-day';
+import { fontSize, MIN_TOUCH, radius, useColors } from '@/theme';
 
 type StatusFilter = TxStatus | 'all';
 type ServiceFilter = TxService | 'all';
@@ -61,7 +62,16 @@ export default function HistoryScreen() {
       last.page * last.pageSize < last.total ? last.page + 1 : undefined,
   });
 
-  const items = query.data?.pages.flatMap((page) => page.items) ?? [];
+  const pages = query.data?.pages;
+  const sections = useMemo(() => {
+    const uniqueItems = new Map<string, TransactionItem>();
+    for (const page of pages ?? []) {
+      for (const item of page.items) {
+        if (!uniqueItems.has(item.reference)) uniqueItems.set(item.reference, item);
+      }
+    }
+    return groupByDay(Array.from(uniqueItems.values()));
+  }, [pages]);
 
   const header = (
     <View style={styles.header}>
@@ -125,28 +135,45 @@ export default function HistoryScreen() {
 
   return (
     <SafeAreaView edges={['top']} style={[styles.screen, { backgroundColor: colors.background }]}>
-      <FlatList
+      <SectionList<TransactionItem, { title: string; data: TransactionItem[] }>
         style={styles.list}
         contentContainerStyle={styles.listContent}
-        data={items}
+        sections={sections}
         keyExtractor={(item) => item.reference}
         keyboardShouldPersistTaps="handled"
+        stickySectionHeadersEnabled={false}
         ListHeaderComponent={header}
         ListEmptyComponent={empty}
-        renderItem={({ item, index }) => (
+        renderSectionHeader={({ section }) => (
+          <Text accessibilityRole="header" style={[styles.day, { color: colors.textSecondary }]}>
+            {section.title}
+          </Text>
+        )}
+        renderItem={({ item, index, section }) => (
           <View
             style={[
               styles.rowWrap,
               { backgroundColor: colors.surface, borderColor: colors.border },
               index === 0 && styles.rowFirst,
-              index === items.length - 1 && styles.rowLast,
+              index === section.data.length - 1 && styles.rowLast,
             ]}>
-            <OrderRow item={item} colors={colors} first={index === 0} />
+            <OrderRow item={item} colors={colors} first={index === 0} timeOnly />
           </View>
         )}
         ListFooterComponent={
           query.isFetchingNextPage ? (
             <ActivityIndicator color={colors.text} style={styles.state} />
+          ) : query.isFetchNextPageError ? (
+            <View style={[styles.state, styles.gap]}>
+              <Text accessibilityRole="alert" style={[styles.error, { color: colors.danger }]}>
+                {errorMessage(query.error)}
+              </Text>
+              <Button
+                label="Load more"
+                variant="secondary"
+                onPress={() => void query.fetchNextPage()}
+              />
+            </View>
           ) : undefined
         }
         onEndReachedThreshold={0.4}
@@ -172,7 +199,7 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.two,
     paddingBottom: BottomTabInset + Spacing.three,
   },
-  header: { gap: 12, paddingBottom: 12 },
+  header: { gap: 12, paddingBottom: 4 },
   title: { fontSize: 24, fontWeight: '700' },
   search: {
     minHeight: MIN_TOUCH,
@@ -182,6 +209,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   chips: { gap: 8, paddingRight: 8 },
+  day: { fontSize: fontSize.base, fontWeight: '700', marginTop: 16, marginBottom: 8 },
   rowWrap: { borderLeftWidth: 1, borderRightWidth: 1, paddingHorizontal: 16 },
   rowFirst: { borderTopWidth: 1, borderTopLeftRadius: radius, borderTopRightRadius: radius },
   rowLast: { borderBottomWidth: 1, borderBottomLeftRadius: radius, borderBottomRightRadius: radius },

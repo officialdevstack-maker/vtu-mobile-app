@@ -1,12 +1,12 @@
 // src/app/help.tsx
 
 import { useMutation } from '@tanstack/react-query';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { createSupportTicket } from '@/api/endpoints';
+import { createSupportTicket, isLookupReference } from '@/api/endpoints';
 import { errorMessage } from '@/api/errors';
 import { Button } from '@/components/button';
 import { TextField } from '@/components/text-field';
@@ -15,7 +15,12 @@ import { useColors } from '@/theme';
 
 export default function HelpScreen() {
   const colors = useColors();
-  const [subject, setSubject] = useState('');
+  const params = useLocalSearchParams<{ subject?: string; transactionId?: string }>();
+  const transactionId =
+    params.transactionId && isLookupReference(params.transactionId) ? params.transactionId : undefined;
+  const [subject, setSubject] = useState(
+    params.subject ? `Issue with ${params.subject}`.slice(0, 120) : '',
+  );
   const [message, setMessage] = useState('');
   const [showErrors, setShowErrors] = useState(false);
   const ticket = useMutation({ mutationFn: createSupportTicket });
@@ -26,7 +31,7 @@ export default function HelpScreen() {
   function submit() {
     setShowErrors(true);
     if (!subjectOk || !messageOk || ticket.isPending) return;
-    ticket.mutate({ subject: subject.trim(), body: message.trim() });
+    ticket.mutate({ subject: subject.trim(), body: message.trim(), transactionId });
   }
 
   if (ticket.isSuccess) {
@@ -56,6 +61,11 @@ export default function HelpScreen() {
             Tell us what went wrong. If it is about an order, mention what you bought and when.
             Please don&apos;t include your PIN.
           </Text>
+          {transactionId ? (
+            <Text style={[styles.body, { color: colors.textSecondary }]}>
+              This message will be linked to your order.
+            </Text>
+          ) : null}
           <TextField
             label="Subject"
             value={subject}

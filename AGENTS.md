@@ -155,14 +155,20 @@ Error `message` is written for customers and can be shown as is. Branch on `code
 | `GET /catalog/electricity` | `{ discos: [{ id, name, min, max, discount }] }` |
 | `POST /verify/smartcard` body `{ operatorId, smartcard }` | `{ valid: true, name } or { valid: false }` |
 | `POST /verify/meter` body `{ discoId, meterType, meter }` | `{ valid: true, name, address } or { valid: false }` |
-| `GET /transactions?q=&status=&service=&page=` | `{ page, pageSize, total, items: [{ reference, service, title, amount, direction, status, at }] }` |
+| `GET /notifications?limit=50` | `{ items: [{ id, title, body, read, at }] }` |
+| `GET /transactions?q=&status=&service=&page=` | `{ page, pageSize, total, items: [{ reference, service, title, amount, direction, status, at, detail?, failureReason?, refunded?, cashbackUsed? }] }` |
 | `GET /transactions/:reference` | `{ reference, status, title, failureReason }` |
+| `POST /notifications/read` | `{ read: true }` |
+| `POST /transactions/:reference/receipt` | `{ page, image }` for a successful debit purchase |
+| `POST /support` body `{ subject, body, transactionId? }` | `{ id }` |
 
 Notes:
 - Amounts are plain numbers in naira. Catalog prices are already priced for the customer's package.
 - `discount` is a percent. Airtime display price is `amount * (1 - discount / 100)` rounded to 2 decimals. The server decides the real charge.
 - `status` is `"pending" | "success" | "failed"`. `service` is `"airtime" | "data" | "cable" | "electricity" | "wallet"`. `direction` is `"debit" | "credit"`.
-- Transaction history includes wallet funding rows (`service: "wallet"`). Their `reference` is not always a UUID, so don't call `/transactions/:reference` with a non-UUID.
+- Transaction history includes wallet funding rows (`service: "wallet"`). Call `/transactions/:reference` only for UUIDs and documented `flw-` funding references.
+- Shared receipt URLs are public. Only offer receipt sharing for successful debit purchases.
+- Notification history is limited to 50 items in the app; the unread filter is local and `POST /notifications/read` marks all loaded notifications read.
 - `status` and `service` filters accept the values above or `"all"`. Pages are 20 items.
 - Smartcard checks can return `503 unavailable`. Treat that as "can't verify right now" and let the customer continue, since the server re-checks at purchase time.
 
@@ -193,15 +199,13 @@ Purchase behaviour you must implement:
 
 ## Not available yet (do not build against these)
 
-The web app has no `/api/v1` route for these, so the app can't do them today:
+These flows are not currently available in the app. Verify the API contract before implementing them:
 - Setting, changing or resetting the transaction PIN. A customer with no PIN gets `pin_required` with a "set up your PIN" message. Until a PIN route exists, show a message that sends them to the website.
 - Funding the wallet (Flutterwave virtual accounts).
 - Profile, packages and upgrades, cashback balance and history, referrals.
-- Notifications list and push token registration.
-- Receipts and sharing.
-- Support tickets.
+- Expo push token registration: `/devices` is documented, but compatibility with Expo token formats needs confirmation.
 
-If asked to build one of these, stop and write down the route the web app needs (path, body, response) so it can be added there first.
+If asked to build one of these, verify the documented route and required response first; if a route is missing, write down what the web app needs.
 
 ## Conventions
 

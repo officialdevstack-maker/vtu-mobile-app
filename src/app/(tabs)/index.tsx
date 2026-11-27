@@ -86,15 +86,6 @@ function greeting(): string {
   return 'Good evening';
 }
 
-function updatedLabel(timestamp: number): string {
-  if (!timestamp) return '';
-  return new Intl.DateTimeFormat('en-NG', {
-    timeZone: 'Africa/Lagos',
-    hour: 'numeric',
-    minute: '2-digit',
-  }).format(new Date(timestamp));
-}
-
 export default function HomeScreen() {
   const colors = useColors();
   const { width } = useWindowDimensions();
@@ -135,8 +126,6 @@ export default function HomeScreen() {
   const items = recent.data?.items ?? [];
   const latest = items[0];
   const pendingCount = items.filter((item) => item.status === 'pending').length;
-  const updated = balance.data ? updatedLabel(balance.dataUpdatedAt) : '';
-
   const fullName = me.data?.name?.trim() ?? '';
   const firstName = fullName.split(/\s+/)[0] ?? '';
   const initial = (firstName.charAt(0) || 'S').toUpperCase();
@@ -314,7 +303,7 @@ export default function HomeScreen() {
 
               <View style={styles.walletBottom}>
                 <Text style={[styles.walletFoot, { color: colors.onWalletMuted }]}>
-                  {updated ? `Updated ${updated}` : 'Available to spend'}
+                  Available to spend
                 </Text>
                 <Pressable
                   accessibilityRole="button"

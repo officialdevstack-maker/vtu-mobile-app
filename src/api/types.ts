@@ -92,6 +92,10 @@ export type TransactionItem = {
   direction: TxDirection;
   status: TxStatus;
   at: string;
+  detail?: string | null;
+  failureReason?: string | null;
+  refunded?: boolean;
+  cashbackUsed?: number;
 };
 export type TransactionPage = { page: number; pageSize: number; total: number; items: TransactionItem[] };
 export type TransactionStatus = {

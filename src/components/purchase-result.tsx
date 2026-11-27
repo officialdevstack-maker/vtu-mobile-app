@@ -31,6 +31,7 @@ export function PurchaseResultCard({
   if (!flow.result) return null;
 
   const status = flow.liveStatus ?? flow.result.status;
+  const reference = flow.reference;
   const tint =
     status === 'success' ? colors.success : status === 'failed' ? colors.danger : colors.textSecondary;
   const title =
@@ -63,7 +64,18 @@ export function PurchaseResultCard({
       <Text style={[styles.detail, { color: colors.textSecondary }]}>{detail}</Text>
       <View style={styles.actions}>
         <Button label="Done" onPress={() => router.back()} />
-        <Button label="View history" variant="secondary" onPress={() => router.push('/history')} />
+        {reference ? (
+          <Button
+            label="View order"
+            variant="secondary"
+            onPress={() =>
+              router.push({
+                pathname: '/order/[reference]',
+                params: { reference },
+              })
+            }
+          />
+        ) : null}
         {status !== 'pending' ? (
           <Button label="Buy again" variant="secondary" onPress={onAgain} />
         ) : null}

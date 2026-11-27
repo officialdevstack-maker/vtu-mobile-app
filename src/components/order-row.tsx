@@ -1,5 +1,6 @@
+import { router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { TransactionItem } from '@/api/types';
 import { formatLagosDate, formatNaira } from '@/lib/format';
@@ -12,13 +13,20 @@ export const STATUS_LABEL: Record<TransactionItem['status'], string> = {
   failed: 'Failed',
 };
 
+const timeFormatter = new Intl.DateTimeFormat('en-NG', {
+  timeZone: 'Africa/Lagos',
+  hour: 'numeric',
+  minute: '2-digit',
+});
+
 type OrderRowProps = {
   item: TransactionItem;
   colors: Palette;
   first: boolean;
+  timeOnly?: boolean;
 };
 
-export function OrderRow({ item, colors, first }: OrderRowProps) {
+export function OrderRow({ item, colors, first, timeOnly = false }: OrderRowProps) {
   const statusColor =
     item.status === 'success'
       ? colors.success
@@ -27,11 +35,16 @@ export function OrderRow({ item, colors, first }: OrderRowProps) {
         : colors.textSecondary;
   const credit = item.direction === 'credit';
   const sign = credit ? '+' : '-';
+  const when = timeOnly ? timeFormatter.format(new Date(item.at)) : formatLagosDate(item.at);
 
   return (
-    <View
-      accessible
-      accessibilityLabel={`${item.title}, ${STATUS_LABEL[item.status]}, ${sign}${formatNaira(item.amount)}`}
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${item.title}, ${STATUS_LABEL[item.status]}, ${sign}${formatNaira(item.amount)}, ${when}`}
+      accessibilityHint="Opens order details"
+      onPress={() =>
+        router.push({ pathname: '/order/[reference]', params: { reference: item.reference } })
+      }
       style={[
         styles.row,
         !first && { borderTopColor: colors.border, borderTopWidth: StyleSheet.hairlineWidth },
@@ -48,9 +61,7 @@ export function OrderRow({ item, colors, first }: OrderRowProps) {
         <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>
           {item.title}
         </Text>
-        <Text style={[styles.meta, { color: colors.textSecondary }]}>
-          {formatLagosDate(item.at)}
-        </Text>
+        <Text style={[styles.meta, { color: colors.textSecondary }]}>{when}</Text>
       </View>
       <View style={styles.rowAmount}>
         <Text style={[styles.title, { color: credit ? colors.success : colors.text }]}>
@@ -62,12 +73,12 @@ export function OrderRow({ item, colors, first }: OrderRowProps) {
           <Text style={[styles.pillText, { color: statusColor }]}>{STATUS_LABEL[item.status]}</Text>
         </View>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, minHeight: 64 },
   icon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   rowText: { flex: 1, gap: 2 },
   rowAmount: { alignItems: 'flex-end', gap: 4 },
