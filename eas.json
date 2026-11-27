@@ -11,9 +11,10 @@
     },
     "preview": {
       "distribution": "internal",
-      "env" : {
-        
-
+      "environment": "preview",
+      "env": {
+        "SENTRY_ORG": "spurs-devs",
+        "SENTRY_PROJECT": "spurs-vtu"
       },
       "android": {
         "buildType": "apk"
@@ -21,7 +22,11 @@
     },
     "production": {
       "autoIncrement": true,
-      "environment": "production"
+      "environment": "production",
+      "env": {
+        "SENTRY_ORG": "spurs-devs",
+        "SENTRY_PROJECT": "spurs-vtu"
+      }
     }
   },
   "submit": {
